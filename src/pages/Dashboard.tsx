@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/DashboardHeader";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -18,6 +18,15 @@ import YearRetrospective from "@/components/YearRetrospective";
 import YourStoryThisYear from "@/components/YourStoryThisYear";
 import MonthlyBreakdown from "@/components/MonthlyBreakdown";
 import { defaultHabits, generateWeekData, formatDateRange, Habit } from "@/lib/habitData";
+import { isSignedIn } from "@/lib/auth";
+import {
+  getStoredHabits,
+  setStoredHabits,
+  getStoredDayHabits,
+  setStoredDayHabits,
+  getStoredMonthCompletion,
+  setStoredMonthCompletion,
+} from "@/lib/storage";
 import ManageHabitsDialog from "@/components/ManageHabitsDialog";
 import StreakMasterDialog from "@/components/StreakMasterDialog";
 
@@ -26,11 +35,17 @@ type ViewType = "week" | "month" | "dashboard";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<ViewType>("dashboard");
-  const [habits, setHabits] = useState<Habit[]>(defaultHabits);
+  const [habits, setHabits] = useState<Habit[]>(() => getStoredHabits() ?? defaultHabits);
   const [manageHabitsOpen, setManageHabitsOpen] = useState(false);
   const [streakDialogOpen, setStreakDialogOpen] = useState(false);
   const [currentYear] = useState(2026);
   const [monthOffset, setMonthOffset] = useState(0);
+
+  // Require sign-in to view dashboard (check once so we don’t flash content)
+  const allowed = useState(() => typeof window !== "undefined" && isSignedIn())[0];
+  useEffect(() => {
+    if (!allowed) navigate("/", { replace: true });
+  }, [allowed, navigate]);
 
   // Week view data
   const [weekOffset, setWeekOffset] = useState(0);
@@ -39,9 +54,11 @@ const Dashboard = () => {
     now.setDate(now.getDate() + weekOffset * 7);
     return now;
   }, [weekOffset]);
-  
+
   const weekData = useMemo(() => generateWeekData(startOfWeek, habits), [startOfWeek, habits]);
   const [dayHabits, setDayHabits] = useState<Record<string, string[]>>(() => {
+    const stored = getStoredDayHabits();
+    if (stored != null && Object.keys(stored).length > 0) return stored;
     const initial: Record<string, string[]> = {};
     weekData.days.forEach(day => {
       initial[day.date.toISOString()] = day.completedHabits;
@@ -92,8 +109,10 @@ const Dashboard = () => {
     return formatDateRange(weekData.startDate, weekData.endDate);
   };
 
-  // Month view: daily completion data (state so we can toggle). No mock data — only user toggles.
+  // Month view: daily completion data (state so we can toggle). Load from storage or start empty.
   const [monthCompletionByDay, setMonthCompletionByDay] = useState<Record<string, string[]>>(() => {
+    const stored = getStoredMonthCompletion();
+    if (stored != null && Object.keys(stored).length > 0) return stored;
     const out: Record<string, string[]> = {};
     const yr = 2026;
     const mo = 0;
@@ -104,6 +123,17 @@ const Dashboard = () => {
     }
     return out;
   });
+
+  // Persist data to localStorage so it survives refresh and sessions
+  useEffect(() => {
+    setStoredHabits(habits);
+  }, [habits]);
+  useEffect(() => {
+    setStoredDayHabits(dayHabits);
+  }, [dayHabits]);
+  useEffect(() => {
+    setStoredMonthCompletion(monthCompletionByDay);
+  }, [monthCompletionByDay]);
 
   const monthlyTrendData = useMemo(() => {
     const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
@@ -186,6 +216,8 @@ const Dashboard = () => {
       .filter((x) => x.daysCompleted > 0)
       .sort((a, b) => b.daysCompleted - a.daysCompleted);
   }, [habits, displayYear, displayMonth, monthCompletionByDay]);
+
+  if (!allowed) return null;
 
   if (activeView === "month") {
     return (

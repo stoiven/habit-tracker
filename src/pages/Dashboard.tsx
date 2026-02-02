@@ -18,7 +18,7 @@ import YearRetrospective from "@/components/YearRetrospective";
 import YourStoryThisYear from "@/components/YourStoryThisYear";
 import MonthlyBreakdown from "@/components/MonthlyBreakdown";
 import { defaultHabits, generateWeekData, formatDateRange, Habit } from "@/lib/habitData";
-import { isSignedIn } from "@/lib/auth";
+import { isSignedIn, clearUser } from "@/lib/auth";
 import {
   getStoredHabits,
   setStoredHabits,
@@ -242,7 +242,9 @@ const Dashboard = () => {
             onViewChange={setActiveView}
             onPrev={() => setMonthOffset((m) => m - 1)}
             onNext={() => setMonthOffset((m) => m + 1)}
+            signedIn={true}
             onSignIn={() => navigate("/")}
+            onSignOut={() => { clearUser(); navigate("/"); }}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -312,7 +314,9 @@ const Dashboard = () => {
             onViewChange={setActiveView}
             onPrev={() => {}}
             onNext={() => {}}
+            signedIn={true}
             onSignIn={() => navigate("/")}
+            onSignOut={() => { clearUser(); navigate("/"); }}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -360,7 +364,9 @@ const Dashboard = () => {
               onViewChange={setActiveView}
               onPrev={() => setWeekOffset(prev => prev - 1)}
               onNext={() => setWeekOffset(prev => prev + 1)}
+              signedIn={true}
               onSignIn={() => navigate("/")}
+            onSignOut={() => { clearUser(); navigate("/"); }}
             />
             <HabitsPanel habits={habits} doneCount={totalCompleted} rate={weeklyRate} onManageHabits={() => setManageHabitsOpen(true)} />
           </div>

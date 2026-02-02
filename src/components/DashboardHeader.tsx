@@ -18,7 +18,9 @@ interface DashboardHeaderProps {
   onViewChange: (view: "week" | "month" | "dashboard") => void;
   onPrev: () => void;
   onNext: () => void;
+  signedIn?: boolean;
   onSignIn?: () => void;
+  onSignOut?: () => void;
   segmentStyle?: "green" | "black";
   rounded?: boolean;
 }
@@ -29,7 +31,9 @@ const DashboardHeader = ({
   onViewChange,
   onPrev,
   onNext,
+  signedIn = false,
   onSignIn,
+  onSignOut,
   segmentStyle = "green",
   rounded,
 }: DashboardHeaderProps) => {
@@ -76,10 +80,10 @@ const DashboardHeader = ({
             <Settings className="w-4 h-4 text-muted-foreground" />
           </button>
           <Button
-            onClick={onSignIn}
+            onClick={signedIn ? onSignOut : onSignIn}
             className="bg-success hover:bg-success/90 text-primary-foreground px-4 py-2 h-auto text-xs font-medium tracking-wider"
           >
-            → Sign In
+            {signedIn ? "Sign Out" : "→ Sign In"}
           </Button>
         </div>
       </div>

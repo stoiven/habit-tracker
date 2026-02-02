@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 15% 85%;
+    --foreground: 30 10% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 20%;
+
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 15% 85%;
+    --secondary-foreground: 30 10% 20%;
+
+    --muted: 30 10% 75%;
+    --muted-foreground: 30 8% 45%;
+
+    --accent: 30 30% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 30 15% 80%;
+    --input: 30 10% 75%;
+    --ring: 30 30% 45%;
+
+    --radius: 0.25rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom tokens */
+    --label: 30 25% 40%;
+    --shadow-card: 0 8px 32px -8px rgba(0, 0, 0, 0.12);
+    
+    /* HabiCard specific */
+    --day-header: 195 35% 35%;
+    --day-header-foreground: 0 0% 100%;
+    --today-header: 0 0% 15%;
+    --today-accent: 45 90% 50%;
+    --success: 150 60% 40%;
+    --success-light: 150 60% 90%;
+    --chart-line: 195 60% 50%;
+    --progress-ring: 195 50% 45%;
+    --progress-bg: 30 10% 90%;
+  }
+
+  /* Force light theme for month view */
+  .month-view {
+    --background: 30 15% 85%;
+    --foreground: 30 10% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 20%;
+    --muted: 30 10% 75%;
+    --muted-foreground: 30 8% 45%;
+    --border: 30 15% 80%;
+  }
+
+  /* GitHub-style dark – Dashboard, My Week, My Month */
+  .dark {
+    --background: 216 28% 7%;
+    --foreground: 210 20% 93%;
+
+    --card: 216 24% 11%;
+    --card-foreground: 210 20% 93%;
+
+    --popover: 216 24% 11%;
+    --popover-foreground: 210 20% 93%;
+
+    --primary: 210 20% 93%;
+    --primary-foreground: 216 28% 7%;
+
+    --secondary: 216 12% 21%;
+    --secondary-foreground: 210 20% 93%;
+
+    --muted: 216 12% 21%;
+    --muted-foreground: 216 8% 58%;
+
+    --accent: 212 100% 68%;
+    --accent-foreground: 216 28% 7%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 216 12% 21%;
+    --input: 216 12% 21%;
+    --ring: 212 100% 68%;
+
+    --label: 216 8% 58%;
+    --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+
+    --day-header: 216 24% 16%;
+    --day-header-foreground: 210 20% 93%;
+    --today-header: 150 60% 28%;
+    --today-accent: 150 60% 50%;
+    --success: 150 60% 40%;
+    --success-light: 150 40% 20%;
+    --chart-line: 212 100% 68%;
+    --progress-ring: 150 60% 40%;
+    --progress-bg: 216 12% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Cormorant Garamond', serif;
+  }
+}
+
+@layer components {
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+  
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease-in-out;
+  }
+}

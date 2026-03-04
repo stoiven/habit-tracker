@@ -1,11 +1,61 @@
 /**
  * Simple auth using localStorage only — no database or server.
+ * Only the allowed email can sign in; password is set on first use and stored as a hash.
  * Sessions persist in this browser until you sign out or clear site data.
- * For sync across devices you’d add a backend (e.g. Firebase/Supabase).
  */
 
 const STORAGE_USER = "habicard_user";
 const STORAGE_GUEST = "habicard_guest";
+const STORAGE_PASSWORD_HASH = "habicard_password_hash";
+
+/** Only this email can access the app. */
+export const ALLOWED_EMAIL = "stevenkcruz95@gmail.com";
+
+export function isAllowedEmail(email: string): boolean {
+  return email.trim().toLowerCase() === ALLOWED_EMAIL.toLowerCase();
+}
+
+/** SHA-256 hash of password (hex string). */
+async function hashPassword(password: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function isPasswordSet(): boolean {
+  try {
+    return !!localStorage.getItem(STORAGE_PASSWORD_HASH);
+  } catch {
+    return false;
+  }
+}
+
+function getPasswordHash(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_PASSWORD_HASH);
+  } catch {
+    return null;
+  }
+}
+
+export async function checkPassword(password: string): Promise<boolean> {
+  const stored = getPasswordHash();
+  if (!stored) return false;
+  const hash = await hashPassword(password);
+  return hash === stored;
+}
+
+/** Set the password (first-time setup). Stores hash only. */
+export async function setPassword(password: string): Promise<void> {
+  if (!password || password.length < 6) return;
+  const hash = await hashPassword(password);
+  try {
+    localStorage.setItem(STORAGE_PASSWORD_HASH, hash);
+  } catch {
+    // ignore
+  }
+}
 
 /** Must be non-empty and contain @ to create a sign-in session. */
 export function isValidEmail(value: string): boolean {
@@ -38,7 +88,7 @@ export function setUser(email: string, displayName?: string): void {
   }
 }
 
-/** Update profile (display name and/or email) for the current user. */
+/** Update profile (display name and/or email). Email can only be the allowed owner email. */
 export function updateProfile(updates: { displayName?: string; email?: string }): void {
   let user = getUser();
   if (!user && isGuest()) {
@@ -49,7 +99,7 @@ export function updateProfile(updates: { displayName?: string; email?: string })
   const next: StoredUser = {
     ...user,
     ...(updates.displayName !== undefined && { displayName: updates.displayName.trim() || undefined }),
-    ...(updates.email !== undefined && { email: updates.email.trim() }),
+    ...(updates.email !== undefined && isAllowedEmail(updates.email) && { email: updates.email.trim() }),
   };
   try {
     localStorage.setItem(STORAGE_USER, JSON.stringify(next));

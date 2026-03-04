@@ -1,5 +1,11 @@
-import { ChevronLeft, ChevronRight, Settings, Search, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Settings, Search, Sparkles, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ViewTab {
   id: "week" | "month" | "dashboard";
@@ -19,8 +25,10 @@ interface DashboardHeaderProps {
   onPrev: () => void;
   onNext: () => void;
   signedIn?: boolean;
+  userDisplayName?: string;
   onSignIn?: () => void;
   onSignOut?: () => void;
+  onProfile?: () => void;
   segmentStyle?: "green" | "black";
   rounded?: boolean;
 }
@@ -32,8 +40,10 @@ const DashboardHeader = ({
   onPrev,
   onNext,
   signedIn = false,
+  userDisplayName = "Guest",
   onSignIn,
   onSignOut,
+  onProfile,
   segmentStyle = "green",
   rounded,
 }: DashboardHeaderProps) => {
@@ -79,12 +89,37 @@ const DashboardHeader = ({
           <button className="p-2 hover:bg-muted rounded-sm transition-colors" aria-label="Settings">
             <Settings className="w-4 h-4 text-muted-foreground" />
           </button>
-          <Button
-            onClick={signedIn ? onSignOut : onSignIn}
-            className="bg-success hover:bg-success/90 text-primary-foreground px-4 py-2 h-auto text-xs font-medium tracking-wider"
-          >
-            {signedIn ? "Sign Out" : "→ Sign In"}
-          </Button>
+          {signedIn ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="bg-success hover:bg-success/90 text-primary-foreground px-4 py-2 h-auto text-xs font-medium tracking-wider gap-1.5"
+                >
+                  Welcome, {userDisplayName}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="dark min-w-[10rem]">
+                {onProfile && (
+                  <DropdownMenuItem onClick={onProfile}>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={onSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              onClick={onSignIn}
+              className="bg-success hover:bg-success/90 text-primary-foreground px-4 py-2 h-auto text-xs font-medium tracking-wider"
+            >
+              → Sign In
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -3,22 +3,36 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "lucide-react";
-import { setUser, setGuest } from "@/lib/auth";
+import { toast } from "sonner";
+import { setUser, setGuest, isValidEmail } from "@/lib/auth";
 
 const AuthCard = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+
+  const canSignIn = isValidEmail(email);
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    setUser(email || "signed-in@local");
+    if (!canSignIn) {
+      toast.error("Enter a valid email to sign in.");
+      return;
+    }
+    setUser(email.trim(), displayName || undefined);
+    toast.success("Signed in. Your session is saved on this device.");
     navigate("/dashboard");
   };
 
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    setUser(email || "signed-up@local");
+    if (!canSignIn) {
+      toast.error("Enter a valid email to sign up.");
+      return;
+    }
+    setUser(email.trim(), displayName || undefined);
+    toast.success("Signed up. Your session is saved on this device.");
     navigate("/dashboard");
   };
 
@@ -41,6 +55,23 @@ const AuthCard = () => {
 
       {/* Form */}
       <form onSubmit={handleSignIn} className="space-y-5">
+        {/* Display name (optional) */}
+        <div className="space-y-2">
+          <label 
+            htmlFor="displayName" 
+            className="block text-xs font-medium tracking-wider text-muted-foreground uppercase"
+          >
+            Display name <span className="text-muted-foreground/70">(optional)</span>
+          </label>
+          <Input
+            id="displayName"
+            type="text"
+            placeholder="e.g. Steven"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="h-11 bg-background border-border placeholder:text-muted-foreground/50"
+          />
+        </div>
         {/* Email Field */}
         <div className="space-y-2">
           <label 
@@ -81,15 +112,17 @@ const AuthCard = () => {
         <div className="flex gap-3 pt-2">
           <Button
             type="submit"
-            className="flex-1 h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide uppercase text-sm"
+            disabled={!canSignIn}
+            className="flex-1 h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium tracking-wide uppercase text-sm disabled:opacity-50"
           >
             Sign In
           </Button>
           <Button
             type="button"
             variant="outline"
+            disabled={!canSignIn}
             onClick={handleSignUp}
-            className="flex-1 h-11 border-foreground text-foreground hover:bg-foreground hover:text-primary-foreground font-medium tracking-wide uppercase text-sm"
+            className="flex-1 h-11 border-foreground text-foreground hover:bg-foreground hover:text-primary-foreground font-medium tracking-wide uppercase text-sm disabled:opacity-50"
           >
             Sign Up
           </Button>

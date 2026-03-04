@@ -18,7 +18,7 @@ import YearRetrospective from "@/components/YearRetrospective";
 import YourStoryThisYear from "@/components/YourStoryThisYear";
 import MonthlyBreakdown from "@/components/MonthlyBreakdown";
 import { defaultHabits, generateWeekData, formatDateRange, Habit } from "@/lib/habitData";
-import { isSignedIn, clearUser } from "@/lib/auth";
+import { isSignedIn, clearUser, getDisplayName } from "@/lib/auth";
 import {
   getStoredHabits,
   setStoredHabits,
@@ -41,11 +41,13 @@ const Dashboard = () => {
   const [currentYear] = useState(2026);
   const [monthOffset, setMonthOffset] = useState(0);
 
-  // Require sign-in to view dashboard (check once so we don’t flash content)
-  const allowed = useState(() => typeof window !== "undefined" && isSignedIn())[0];
+  // Require sign-in to view dashboard; re-check so we always enforce
+  const [allowed, setAllowed] = useState<boolean | null>(null);
   useEffect(() => {
-    if (!allowed) navigate("/", { replace: true });
-  }, [allowed, navigate]);
+    const ok = typeof window !== "undefined" && isSignedIn();
+    setAllowed(ok);
+    if (!ok) navigate("/", { replace: true });
+  }, [navigate]);
 
   // Week view data
   const [weekOffset, setWeekOffset] = useState(0);
@@ -243,8 +245,10 @@ const Dashboard = () => {
             onPrev={() => setMonthOffset((m) => m - 1)}
             onNext={() => setMonthOffset((m) => m + 1)}
             signedIn={true}
+            userDisplayName={getDisplayName()}
             onSignIn={() => navigate("/")}
             onSignOut={() => { clearUser(); navigate("/"); }}
+            onProfile={() => navigate("/profile")}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -315,8 +319,10 @@ const Dashboard = () => {
             onPrev={() => {}}
             onNext={() => {}}
             signedIn={true}
+            userDisplayName={getDisplayName()}
             onSignIn={() => navigate("/")}
             onSignOut={() => { clearUser(); navigate("/"); }}
+            onProfile={() => navigate("/profile")}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -365,8 +371,10 @@ const Dashboard = () => {
               onPrev={() => setWeekOffset(prev => prev - 1)}
               onNext={() => setWeekOffset(prev => prev + 1)}
               signedIn={true}
+              userDisplayName={getDisplayName()}
               onSignIn={() => navigate("/")}
-            onSignOut={() => { clearUser(); navigate("/"); }}
+              onSignOut={() => { clearUser(); navigate("/"); }}
+              onProfile={() => navigate("/profile")}
             />
             <HabitsPanel habits={habits} doneCount={totalCompleted} rate={weeklyRate} onManageHabits={() => setManageHabitsOpen(true)} />
           </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/DashboardHeader";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -186,20 +186,28 @@ const Dashboard = () => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // Refs so sync can merge cloud into current local state without wiping local keys
+  const dayHabitsRef = useRef<Record<string, string[]>>(dayHabits);
+  const monthCompletionByDayRef = useRef<Record<string, string[]>>(monthCompletionByDay);
+  dayHabitsRef.current = dayHabits;
+  monthCompletionByDayRef.current = monthCompletionByDay;
+
   const applySyncPayload = useCallback((data: SyncPayload) => {
     if (!data) return;
-    // Only overwrite local state when cloud has meaningful data — never replace with empty and wipe what the user had
     if (Array.isArray(data.habits) && data.habits.length > 0) {
       setHabits(data.habits as Habit[]);
       setStoredHabits(data.habits as Habit[]);
     }
-    if (data.dayHabits && typeof data.dayHabits === "object" && Object.keys(data.dayHabits).length > 0) {
-      setDayHabits(data.dayHabits);
-      setStoredDayHabits(data.dayHabits);
+    // Merge cloud into local so we never remove keys the user has locally (stops refresh from unchecking)
+    if (data.dayHabits && typeof data.dayHabits === "object") {
+      const merged = { ...dayHabitsRef.current, ...data.dayHabits };
+      setDayHabits(merged);
+      setStoredDayHabits(merged);
     }
-    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object" && Object.keys(data.monthCompletionByDay).length > 0) {
-      setMonthCompletionByDay(data.monthCompletionByDay);
-      setStoredMonthCompletion(data.monthCompletionByDay);
+    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+      const merged = { ...monthCompletionByDayRef.current, ...data.monthCompletionByDay };
+      setMonthCompletionByDay(merged);
+      setStoredMonthCompletion(merged);
     }
     if (Array.isArray(data.tasks)) {
       setTasks(data.tasks as Task[]);

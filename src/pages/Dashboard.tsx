@@ -73,14 +73,21 @@ const Dashboard = () => {
 
   const weekData = useMemo(() => generateWeekData(startOfWeek, habits), [startOfWeek, habits]);
   const [dayHabits, setDayHabits] = useState<Record<string, string[]>>(() => {
-    const stored = getStoredDayHabits();
-    if (stored != null && Object.keys(stored).length > 0) return stored;
     const initial: Record<string, string[]> = {};
     weekData.days.forEach(day => {
-      initial[day.date.toISOString()] = day.completedHabits;
+      initial[day.date.toISOString()] = [];
     });
     return initial;
   });
+
+  // Restore dayHabits from localStorage after mount (avoids Vercel/refresh reading storage too early)
+  useEffect(() => {
+    const stored = getStoredDayHabits();
+    if (!stored || typeof stored !== "object") return;
+    const hasAny = Object.values(stored).some((arr) => Array.isArray(arr) && arr.length > 0);
+    if (!hasAny) return;
+    setDayHabits((prev) => ({ ...prev, ...stored }));
+  }, []);
 
   const toggleHabit = (dayDate: Date, habitId: string) => {
     const key = dayDate.toISOString();
@@ -125,10 +132,8 @@ const Dashboard = () => {
     return formatDateRange(weekData.startDate, weekData.endDate);
   };
 
-  // Month view: daily completion data (state so we can toggle). Load from storage or start empty.
+  // Month view: daily completion data (state so we can toggle). Start empty; restore from localStorage in effect.
   const [monthCompletionByDay, setMonthCompletionByDay] = useState<Record<string, string[]>>(() => {
-    const stored = getStoredMonthCompletion();
-    if (stored != null && Object.keys(stored).length > 0) return stored;
     const out: Record<string, string[]> = {};
     const yr = 2026;
     const mo = 0;
@@ -139,6 +144,14 @@ const Dashboard = () => {
     }
     return out;
   });
+
+  useEffect(() => {
+    const stored = getStoredMonthCompletion();
+    if (!stored || typeof stored !== "object") return;
+    const hasAny = Object.values(stored).some((arr) => Array.isArray(arr) && arr.length > 0);
+    if (!hasAny) return;
+    setMonthCompletionByDay((prev) => ({ ...prev, ...stored }));
+  }, []);
 
   // Persist data to localStorage so it survives refresh and sessions
   useEffect(() => {

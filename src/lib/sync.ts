@@ -23,18 +23,27 @@ function getSyncSecret(): string | null {
   return typeof s === "string" && s.length > 0 ? s : null;
 }
 
+export type FetchSyncResult =
+  | { ok: true; data: SyncPayload | null }
+  | { ok: false; status?: number };
+
 export async function fetchSyncData(userEmail: string): Promise<SyncPayload | null> {
+  const result = await fetchSyncDataWithStatus(userEmail);
+  return result.ok ? result.data : null;
+}
+
+export async function fetchSyncDataWithStatus(userEmail: string): Promise<FetchSyncResult> {
   const secret = getSyncSecret();
-  if (!secret) return null;
+  if (!secret) return { ok: false };
   const base = getApiBase();
   const url = `${base}/api/data?user=${encodeURIComponent(userEmail)}`;
   const res = await fetch(url, {
     method: "GET",
     headers: { Authorization: `Bearer ${secret}` },
   });
-  if (!res.ok) return null;
+  if (!res.ok) return { ok: false, status: res.status };
   const data = await res.json();
-  if (data == null) return null;
+  if (data == null) return { ok: true, data: null };
   if (
     typeof data !== "object" ||
     !("habits" in data) ||
@@ -43,9 +52,9 @@ export async function fetchSyncData(userEmail: string): Promise<SyncPayload | nu
     !("tasks" in data) ||
     !("distractions" in data)
   ) {
-    return null;
+    return { ok: false, status: res.status };
   }
-  return data as SyncPayload;
+  return { ok: true, data: data as SyncPayload };
 }
 
 export async function pushSyncData(userEmail: string, payload: SyncPayload): Promise<boolean> {

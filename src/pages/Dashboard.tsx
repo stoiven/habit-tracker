@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/DashboardHeader";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -37,7 +37,8 @@ import ManageHabitsDialog from "@/components/ManageHabitsDialog";
 import StreakMasterDialog from "@/components/StreakMasterDialog";
 import GoogleCalendarCard from "@/components/GoogleCalendarCard";
 import TaskListCard from "@/components/TaskListCard";
-import { fetchSyncData, pushSyncData, isSyncConfigured } from "@/lib/sync";
+import { fetchSyncDataWithStatus, pushSyncData, isSyncConfigured, type SyncPayload } from "@/lib/sync";
+import { toast } from "sonner";
 
 type ViewType = "week" | "month" | "dashboard";
 
@@ -185,36 +186,63 @@ const Dashboard = () => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Cross-device sync: fetch from API when dashboard loads (cloud overwrites local)
-  useEffect(() => {
+  const applySyncPayload = useCallback((data: SyncPayload) => {
+    if (!data) return;
+    if (Array.isArray(data.habits) && data.habits.length > 0) {
+      setHabits(data.habits as Habit[]);
+      setStoredHabits(data.habits as Habit[]);
+    }
+    if (data.dayHabits && typeof data.dayHabits === "object") {
+      setDayHabits(data.dayHabits);
+      setStoredDayHabits(data.dayHabits);
+    }
+    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+      setMonthCompletionByDay(data.monthCompletionByDay);
+      setStoredMonthCompletion(data.monthCompletionByDay);
+    }
+    if (Array.isArray(data.tasks)) {
+      setTasks(data.tasks as Task[]);
+      setStoredTasks(data.tasks as Task[]);
+    }
+    if (Array.isArray(data.distractions)) {
+      setDistractions(data.distractions as Distraction[]);
+      setStoredDistractions(data.distractions as Distraction[]);
+    }
+  }, []);
+
+  const runSyncFetch = useCallback(() => {
     if (!allowed) return;
     const user = getUser();
     const email = user?.email?.trim();
     if (!email || !email.includes("@") || !isSyncConfigured()) return;
-    fetchSyncData(email).then((data) => {
-      if (!data) return;
-      if (Array.isArray(data.habits) && data.habits.length > 0) {
-        setHabits(data.habits as Habit[]);
-        setStoredHabits(data.habits as Habit[]);
-      }
-      if (data.dayHabits && typeof data.dayHabits === "object") {
-        setDayHabits(data.dayHabits);
-        setStoredDayHabits(data.dayHabits);
-      }
-      if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-        setMonthCompletionByDay(data.monthCompletionByDay);
-        setStoredMonthCompletion(data.monthCompletionByDay);
-      }
-      if (Array.isArray(data.tasks)) {
-        setTasks(data.tasks as Task[]);
-        setStoredTasks(data.tasks as Task[]);
-      }
-      if (Array.isArray(data.distractions)) {
-        setDistractions(data.distractions as Distraction[]);
-        setStoredDistractions(data.distractions as Distraction[]);
+    fetchSyncDataWithStatus(email).then((result) => {
+      if (result.ok && result.data) {
+        applySyncPayload(result.data);
+      } else if (!result.ok && "status" in result) {
+        const status = result.status;
+        if (status === 401) {
+          toast.error("Sync failed: check SYNC_SECRET and VITE_SYNC_SECRET match and are set in Vercel.");
+        } else if (status != null && status >= 500) {
+          toast.error("Sync server error. Check Vercel Blob is connected.");
+        }
       }
     });
-  }, [allowed]);
+  }, [allowed, applySyncPayload]);
+
+  // Cross-device sync: fetch from API when dashboard loads (cloud overwrites local)
+  useEffect(() => {
+    runSyncFetch();
+  }, [runSyncFetch]);
+
+  // Refetch when tab becomes visible so laptop gets latest after you update on another device
+  useEffect(() => {
+    if (!allowed || !isSyncConfigured()) return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") runSyncFetch();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [allowed, runSyncFetch]);
 
   // Cross-device sync: push to API when data changes (debounced)
   useEffect(() => {

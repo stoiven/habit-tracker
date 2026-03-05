@@ -57,7 +57,8 @@ Habits, day completions, month completions, tasks, and distractions are stored i
      - `VITE_SYNC_SECRET` = the **same** secret (needed for the client to call the API).
 
 3. **Deploy**
-   - Redeploy so the API route `api/data.ts` and the new env vars are live. The app will then:
+   - Add **both** env vars in Vercel **before** building. `VITE_SYNC_SECRET` is baked into the client at **build time**, so add it in Vercel → Settings → Environment Variables, then trigger a new deploy (e.g. push a commit or redeploy from the dashboard).
+   - After deploy, the app will:
      - **On load:** Fetch your data from the API and overwrite local state (so the device shows the latest from any device).
      - **On change:** After you edit habits/tasks/etc., changes are pushed to the API after 1.5 seconds.
 

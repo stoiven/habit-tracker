@@ -186,28 +186,41 @@ const Dashboard = () => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Refs so sync can merge cloud into current local state without wiping local keys
+  // Refs so sync can merge cloud into current local state
   const dayHabitsRef = useRef<Record<string, string[]>>(dayHabits);
   const monthCompletionByDayRef = useRef<Record<string, string[]>>(monthCompletionByDay);
+  const isInitialSyncDoneRef = useRef(false);
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
-  const applySyncPayload = useCallback((data: SyncPayload) => {
+  const applySyncPayload = useCallback((data: SyncPayload, isFromVisibilityChange: boolean) => {
     if (!data) return;
     if (Array.isArray(data.habits) && data.habits.length > 0) {
       setHabits(data.habits as Habit[]);
       setStoredHabits(data.habits as Habit[]);
     }
-    // Merge cloud into local so we never remove keys the user has locally (stops refresh from unchecking)
-    if (data.dayHabits && typeof data.dayHabits === "object") {
-      const merged = { ...dayHabitsRef.current, ...data.dayHabits };
-      setDayHabits(merged);
-      setStoredDayHabits(merged);
-    }
-    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-      const merged = { ...monthCompletionByDayRef.current, ...data.monthCompletionByDay };
-      setMonthCompletionByDay(merged);
-      setStoredMonthCompletion(merged);
+    // On first load after refresh: never apply cloud dayHabits/monthCompletionByDay (show only localStorage).
+    // On tab focus / later fetches: merge cloud with local (local wins so checkmarks stay).
+    if (isFromVisibilityChange || isInitialSyncDoneRef.current) {
+      isInitialSyncDoneRef.current = true;
+      if (data.dayHabits && typeof data.dayHabits === "object") {
+        const local = dayHabitsRef.current;
+        const merged = { ...data.dayHabits };
+        for (const k of Object.keys(local)) {
+          if (local[k]?.length) merged[k] = local[k];
+        }
+        setDayHabits(merged);
+        setStoredDayHabits(merged);
+      }
+      if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+        const local = monthCompletionByDayRef.current;
+        const merged = { ...data.monthCompletionByDay };
+        for (const k of Object.keys(local)) {
+          if (local[k]?.length) merged[k] = local[k];
+        }
+        setMonthCompletionByDay(merged);
+        setStoredMonthCompletion(merged);
+      }
     }
     if (Array.isArray(data.tasks)) {
       setTasks(data.tasks as Task[]);
@@ -219,14 +232,14 @@ const Dashboard = () => {
     }
   }, []);
 
-  const runSyncFetch = useCallback(() => {
+  const runSyncFetch = useCallback((isFromVisibilityChange = false) => {
     if (!allowed) return;
     const user = getUser();
     const email = user?.email?.trim();
     if (!email || !email.includes("@") || !isSyncConfigured()) return;
     fetchSyncDataWithStatus(email).then((result) => {
       if (result.ok && result.data) {
-        applySyncPayload(result.data);
+        applySyncPayload(result.data, isFromVisibilityChange);
       } else if (!result.ok && "status" in result) {
         const status = result.status;
         if (status === 401) {
@@ -238,16 +251,16 @@ const Dashboard = () => {
     });
   }, [allowed, applySyncPayload]);
 
-  // Cross-device sync: fetch from API when dashboard loads (cloud overwrites local)
+  // Cross-device sync: fetch on load but do NOT apply dayHabits/monthCompletionByDay (so refresh keeps localStorage checkmarks)
   useEffect(() => {
-    runSyncFetch();
+    runSyncFetch(false);
   }, [runSyncFetch]);
 
-  // Refetch when tab becomes visible so laptop gets latest after you update on another device
+  // Refetch when tab becomes visible; then apply day data (merge so local wins)
   useEffect(() => {
     if (!allowed || !isSyncConfigured()) return;
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") runSyncFetch();
+      if (document.visibilityState === "visible") runSyncFetch(true);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);

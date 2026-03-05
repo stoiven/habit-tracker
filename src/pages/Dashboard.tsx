@@ -18,7 +18,7 @@ import YearRetrospective from "@/components/YearRetrospective";
 import YourStoryThisYear from "@/components/YourStoryThisYear";
 import MonthlyBreakdown from "@/components/MonthlyBreakdown";
 import { defaultHabits, generateWeekData, formatDateRange, Habit } from "@/lib/habitData";
-import { isSignedIn, clearUser, getDisplayName } from "@/lib/auth";
+import { isSignedIn, clearUser, getDisplayName, getUser } from "@/lib/auth";
 import {
   getStoredHabits,
   setStoredHabits,
@@ -37,6 +37,7 @@ import ManageHabitsDialog from "@/components/ManageHabitsDialog";
 import StreakMasterDialog from "@/components/StreakMasterDialog";
 import GoogleCalendarCard from "@/components/GoogleCalendarCard";
 import TaskListCard from "@/components/TaskListCard";
+import { fetchSyncData, pushSyncData, isSyncConfigured } from "@/lib/sync";
 
 type ViewType = "week" | "month" | "dashboard";
 
@@ -183,6 +184,55 @@ const Dashboard = () => {
   const removeTask = (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
+
+  // Cross-device sync: fetch from API when dashboard loads (cloud overwrites local)
+  useEffect(() => {
+    if (!allowed) return;
+    const user = getUser();
+    const email = user?.email?.trim();
+    if (!email || !email.includes("@") || !isSyncConfigured()) return;
+    fetchSyncData(email).then((data) => {
+      if (!data) return;
+      if (Array.isArray(data.habits) && data.habits.length > 0) {
+        setHabits(data.habits as Habit[]);
+        setStoredHabits(data.habits as Habit[]);
+      }
+      if (data.dayHabits && typeof data.dayHabits === "object") {
+        setDayHabits(data.dayHabits);
+        setStoredDayHabits(data.dayHabits);
+      }
+      if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+        setMonthCompletionByDay(data.monthCompletionByDay);
+        setStoredMonthCompletion(data.monthCompletionByDay);
+      }
+      if (Array.isArray(data.tasks)) {
+        setTasks(data.tasks as Task[]);
+        setStoredTasks(data.tasks as Task[]);
+      }
+      if (Array.isArray(data.distractions)) {
+        setDistractions(data.distractions as Distraction[]);
+        setStoredDistractions(data.distractions as Distraction[]);
+      }
+    });
+  }, [allowed]);
+
+  // Cross-device sync: push to API when data changes (debounced)
+  useEffect(() => {
+    if (!allowed) return;
+    const user = getUser();
+    const email = user?.email?.trim();
+    if (!email || !email.includes("@") || !isSyncConfigured()) return;
+    const t = setTimeout(() => {
+      pushSyncData(email, {
+        habits,
+        dayHabits,
+        monthCompletionByDay,
+        tasks,
+        distractions,
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [allowed, habits, dayHabits, monthCompletionByDay, tasks, distractions]);
 
   const monthlyTrendData = useMemo(() => {
     const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();

@@ -41,6 +41,30 @@ You don’t need the app to be live first: localhost works as long as it’s lis
 
 ---
 
+## Cross-device sync
+
+Habits, day completions, month completions, tasks, and distractions are stored in the browser by default. To sync the same data across devices (e.g. phone and laptop), the app can use a Vercel API that stores data in **Vercel Blob**.
+
+1. **Vercel Blob**
+   - In the [Vercel Dashboard](https://vercel.com/dashboard), open your project → **Storage** → **Create Database** → **Blob**.
+   - Create a Blob store (name it e.g. `habicard-sync`). Vercel will add `BLOB_READ_WRITE_TOKEN` to your project env.
+
+2. **Sync secret**
+   - Generate a secret (e.g. `openssl rand -hex 32`).
+   - In Vercel: **Project → Settings → Environment Variables** add:
+     - `SYNC_SECRET` = your secret (all environments).
+   - In the same place (or in local `.env`) add:
+     - `VITE_SYNC_SECRET` = the **same** secret (needed for the client to call the API).
+
+3. **Deploy**
+   - Redeploy so the API route `api/data.ts` and the new env vars are live. The app will then:
+     - **On load:** Fetch your data from the API and overwrite local state (so the device shows the latest from any device).
+     - **On change:** After you edit habits/tasks/etc., changes are pushed to the API after 1.5 seconds.
+
+Sync only runs when you're signed in and `VITE_SYNC_SECRET` is set. Without it, the app still works with local-only storage.
+
+---
+
 ## Project info (Lovable)
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID

@@ -145,9 +145,18 @@ const Dashboard = () => {
     setStoredHabits(habits);
   }, [habits]);
   useEffect(() => {
+    // Never overwrite stored data with empty — prevents refresh from wiping checkmarks if state ever initializes empty
+    const stored = getStoredDayHabits();
+    const storedHasData = stored && Object.values(stored).some((arr) => arr.length > 0);
+    const currentHasData = dayHabits && Object.values(dayHabits).some((arr) => arr.length > 0);
+    if (!currentHasData && storedHasData) return;
     setStoredDayHabits(dayHabits);
   }, [dayHabits]);
   useEffect(() => {
+    const stored = getStoredMonthCompletion();
+    const storedHasData = stored && Object.values(stored).some((arr) => arr.length > 0);
+    const currentHasData = monthCompletionByDay && Object.values(monthCompletionByDay).some((arr) => arr.length > 0);
+    if (!currentHasData && storedHasData) return;
     setStoredMonthCompletion(monthCompletionByDay);
   }, [monthCompletionByDay]);
 
@@ -195,32 +204,30 @@ const Dashboard = () => {
 
   const applySyncPayload = useCallback((data: SyncPayload, isFromVisibilityChange: boolean) => {
     if (!data) return;
+    // On first load after refresh: do not apply any cloud data (keep 100% localStorage so checkmarks persist).
+    if (!isFromVisibilityChange && !isInitialSyncDoneRef.current) return;
+    isInitialSyncDoneRef.current = true;
     if (Array.isArray(data.habits) && data.habits.length > 0) {
       setHabits(data.habits as Habit[]);
       setStoredHabits(data.habits as Habit[]);
     }
-    // On first load after refresh: never apply cloud dayHabits/monthCompletionByDay (show only localStorage).
-    // On tab focus / later fetches: merge cloud with local (local wins so checkmarks stay).
-    if (isFromVisibilityChange || isInitialSyncDoneRef.current) {
-      isInitialSyncDoneRef.current = true;
-      if (data.dayHabits && typeof data.dayHabits === "object") {
-        const local = dayHabitsRef.current;
-        const merged = { ...data.dayHabits };
-        for (const k of Object.keys(local)) {
-          if (local[k]?.length) merged[k] = local[k];
-        }
-        setDayHabits(merged);
-        setStoredDayHabits(merged);
+    if (data.dayHabits && typeof data.dayHabits === "object") {
+      const local = dayHabitsRef.current;
+      const merged = { ...data.dayHabits };
+      for (const k of Object.keys(local)) {
+        if (local[k]?.length) merged[k] = local[k];
       }
-      if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-        const local = monthCompletionByDayRef.current;
-        const merged = { ...data.monthCompletionByDay };
-        for (const k of Object.keys(local)) {
-          if (local[k]?.length) merged[k] = local[k];
-        }
-        setMonthCompletionByDay(merged);
-        setStoredMonthCompletion(merged);
+      setDayHabits(merged);
+      setStoredDayHabits(merged);
+    }
+    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+      const local = monthCompletionByDayRef.current;
+      const merged = { ...data.monthCompletionByDay };
+      for (const k of Object.keys(local)) {
+        if (local[k]?.length) merged[k] = local[k];
       }
+      setMonthCompletionByDay(merged);
+      setStoredMonthCompletion(merged);
     }
     if (Array.isArray(data.tasks)) {
       setTasks(data.tasks as Task[]);

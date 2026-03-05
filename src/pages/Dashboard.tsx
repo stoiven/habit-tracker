@@ -230,33 +230,13 @@ const Dashboard = () => {
 
   const applySyncPayload = useCallback((data: SyncPayload, isFromVisibilityChange: boolean) => {
     if (!data) return;
-    // On first load after refresh: do not apply any cloud data (keep 100% localStorage so checkmarks persist).
-    if (!isFromVisibilityChange && !isInitialSyncDoneRef.current) return;
-    isInitialSyncDoneRef.current = true;
+    const isFirstLoad = !isFromVisibilityChange && !isInitialSyncDoneRef.current;
+    if (isFirstLoad) isInitialSyncDoneRef.current = true;
+
+    // Always apply habits, tasks, distractions so cross-device works on first load
     if (Array.isArray(data.habits) && data.habits.length > 0) {
       setHabits(data.habits as Habit[]);
       setStoredHabits(data.habits as Habit[]);
-    }
-    if (data.dayHabits && typeof data.dayHabits === "object") {
-      const local = dayHabitsRef.current;
-      const merged: Record<string, string[]> = {};
-      for (const k of Object.keys(data.dayHabits)) {
-        if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
-      }
-      for (const k of Object.keys(local)) {
-        if (local[k]?.length) merged[k] = local[k];
-      }
-      setDayHabits(merged);
-      setStoredDayHabits(merged);
-    }
-    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-      const local = monthCompletionByDayRef.current;
-      const merged = { ...data.monthCompletionByDay };
-      for (const k of Object.keys(local)) {
-        if (local[k]?.length) merged[k] = local[k];
-      }
-      setMonthCompletionByDay(merged);
-      setStoredMonthCompletion(merged);
     }
     if (Array.isArray(data.tasks)) {
       setTasks(data.tasks as Task[]);
@@ -265,6 +245,31 @@ const Dashboard = () => {
     if (Array.isArray(data.distractions)) {
       setDistractions(data.distractions as Distraction[]);
       setStoredDistractions(data.distractions as Distraction[]);
+    }
+
+    // Only apply dayHabits/month when not first load (so refresh on same device keeps localStorage checkmarks)
+    if (!isFirstLoad) {
+      if (data.dayHabits && typeof data.dayHabits === "object") {
+        const local = dayHabitsRef.current;
+        const merged: Record<string, string[]> = {};
+        for (const k of Object.keys(data.dayHabits)) {
+          if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
+        }
+        for (const k of Object.keys(local)) {
+          if (local[k]?.length) merged[k] = local[k];
+        }
+        setDayHabits(merged);
+        setStoredDayHabits(merged);
+      }
+      if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+        const local = monthCompletionByDayRef.current;
+        const merged = { ...data.monthCompletionByDay };
+        for (const k of Object.keys(local)) {
+          if (local[k]?.length) merged[k] = local[k];
+        }
+        setMonthCompletionByDay(merged);
+        setStoredMonthCompletion(merged);
+      }
     }
   }, []);
 
@@ -315,6 +320,15 @@ const Dashboard = () => {
         monthCompletionByDay,
         tasks,
         distractions,
+      }).then((result) => {
+        if (!result.ok && "status" in result) {
+          const status = result.status;
+          if (status === 401) {
+            toast.error("Sync save failed: SYNC_SECRET and VITE_SYNC_SECRET must match in Vercel.");
+          } else if (status != null && status >= 500) {
+            toast.error("Sync save failed. Check Vercel Blob is connected.");
+          }
+        }
       });
     }, 1500);
     return () => clearTimeout(t);

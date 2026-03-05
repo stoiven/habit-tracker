@@ -57,9 +57,11 @@ export async function fetchSyncDataWithStatus(userEmail: string): Promise<FetchS
   return { ok: true, data: data as SyncPayload };
 }
 
-export async function pushSyncData(userEmail: string, payload: SyncPayload): Promise<boolean> {
+export type PushSyncResult = { ok: true } | { ok: false; status?: number };
+
+export async function pushSyncData(userEmail: string, payload: SyncPayload): Promise<PushSyncResult> {
   const secret = getSyncSecret();
-  if (!secret) return false;
+  if (!secret) return { ok: false };
   const base = getApiBase();
   const res = await fetch(`${base}/api/data`, {
     method: "POST",
@@ -69,7 +71,8 @@ export async function pushSyncData(userEmail: string, payload: SyncPayload): Pro
     },
     body: JSON.stringify({ user: userEmail, data: payload }),
   });
-  return res.ok;
+  if (res.ok) return { ok: true };
+  return { ok: false, status: res.status };
 }
 
 export function isSyncConfigured(): boolean {

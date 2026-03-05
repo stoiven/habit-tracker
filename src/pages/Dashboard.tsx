@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/DashboardHeader";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -17,7 +17,7 @@ import AnnualTrends from "@/components/AnnualTrends";
 import YearRetrospective from "@/components/YearRetrospective";
 import YourStoryThisYear from "@/components/YourStoryThisYear";
 import MonthlyBreakdown from "@/components/MonthlyBreakdown";
-import { defaultHabits, generateWeekData, formatDateRange, Habit } from "@/lib/habitData";
+import { defaultHabits, generateWeekData, formatDateRange, dateToStorageKey, normalizeDayHabitKey, Habit } from "@/lib/habitData";
 import { isSignedIn, clearUser, getDisplayName, getUser } from "@/lib/auth";
 import {
   getStoredHabits,
@@ -72,45 +72,45 @@ const Dashboard = () => {
   }, [weekOffset]);
 
   const weekData = useMemo(() => generateWeekData(startOfWeek, habits), [startOfWeek, habits]);
+  // Initialize from localStorage; use YYYY-MM-DD keys so save/restore always match
   const [dayHabits, setDayHabits] = useState<Record<string, string[]>>(() => {
     const initial: Record<string, string[]> = {};
     weekData.days.forEach(day => {
-      initial[day.date.toISOString()] = [];
+      initial[dateToStorageKey(day.date)] = [];
     });
+    const stored = getStoredDayHabits();
+    if (stored && typeof stored === "object") {
+      for (const k of Object.keys(stored)) {
+        if (Array.isArray(stored[k])) initial[normalizeDayHabitKey(k)] = stored[k];
+      }
+    }
     return initial;
   });
 
-  // Restore dayHabits from localStorage after mount (avoids Vercel/refresh reading storage too early)
-  useEffect(() => {
-    const stored = getStoredDayHabits();
-    if (!stored || typeof stored !== "object") return;
-    const hasAny = Object.values(stored).some((arr) => Array.isArray(arr) && arr.length > 0);
-    if (!hasAny) return;
-    setDayHabits((prev) => ({ ...prev, ...stored }));
-  }, []);
-
   const toggleHabit = (dayDate: Date, habitId: string) => {
-    const key = dayDate.toISOString();
+    const key = dateToStorageKey(dayDate);
     setDayHabits(prev => {
       const current = prev[key] || [];
       const isCompleted = current.includes(habitId);
-      return {
+      const next = {
         ...prev,
-        [key]: isCompleted 
+        [key]: isCompleted
           ? current.filter(id => id !== habitId)
-          : [...current, habitId]
+          : [...current, habitId],
       };
+      setStoredDayHabits(next);
+      return next;
     });
   };
 
-  // Calculate stats
-  const totalCompleted = Object.values(dayHabits).reduce((sum, arr) => sum + arr.length, 0);
+  // Stats for the currently displayed week only (so DONE / RATE match the 7 day cards)
+  const totalCompleted = weekData.days.reduce((sum, day) => sum + (dayHabits[dateToStorageKey(day.date)] || []).length, 0);
   const totalPossible = 7 * habits.filter(h => h.isActive).length;
-  const weeklyRate = Math.round((totalCompleted / totalPossible) * 100);
+  const weeklyRate = totalPossible ? Math.round((totalCompleted / totalPossible) * 100) : 0;
 
   const chartData = weekData.days.map(day => ({
     day: day.dayName.slice(0, 3),
-    value: (dayHabits[day.date.toISOString()] || []).length,
+    value: (dayHabits[dateToStorageKey(day.date)] || []).length,
   }));
 
   const months = [
@@ -132,7 +132,7 @@ const Dashboard = () => {
     return formatDateRange(weekData.startDate, weekData.endDate);
   };
 
-  // Month view: daily completion data (state so we can toggle). Start empty; restore from localStorage in effect.
+  // Month view: daily completion — init from localStorage so it survives refresh
   const [monthCompletionByDay, setMonthCompletionByDay] = useState<Record<string, string[]>>(() => {
     const out: Record<string, string[]> = {};
     const yr = 2026;
@@ -142,15 +142,29 @@ const Dashboard = () => {
       const key = `${yr}-${String(mo + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       out[key] = [];
     }
+    const stored = getStoredMonthCompletion();
+    if (stored && typeof stored === "object") {
+      for (const k of Object.keys(stored)) {
+        if (Array.isArray(stored[k])) out[k] = stored[k];
+      }
+    }
     return out;
   });
 
-  useEffect(() => {
-    const stored = getStoredMonthCompletion();
-    if (!stored || typeof stored !== "object") return;
-    const hasAny = Object.values(stored).some((arr) => Array.isArray(arr) && arr.length > 0);
-    if (!hasAny) return;
-    setMonthCompletionByDay((prev) => ({ ...prev, ...stored }));
+  // Re-apply localStorage once after mount (catches any env where initializer read was empty)
+  useLayoutEffect(() => {
+    const storedDay = getStoredDayHabits();
+    if (storedDay && typeof storedDay === "object" && Object.values(storedDay).some(arr => arr.length > 0)) {
+      const normalized: Record<string, string[]> = {};
+      for (const k of Object.keys(storedDay)) {
+        if (Array.isArray(storedDay[k])) normalized[normalizeDayHabitKey(k)] = storedDay[k];
+      }
+      setDayHabits(prev => ({ ...prev, ...normalized }));
+    }
+    const storedMonth = getStoredMonthCompletion();
+    if (storedMonth && typeof storedMonth === "object" && Object.values(storedMonth).some(arr => arr.length > 0)) {
+      setMonthCompletionByDay(prev => ({ ...prev, ...storedMonth }));
+    }
   }, []);
 
   // Persist data to localStorage so it survives refresh and sessions
@@ -158,7 +172,6 @@ const Dashboard = () => {
     setStoredHabits(habits);
   }, [habits]);
   useEffect(() => {
-    // Never overwrite stored data with empty — prevents refresh from wiping checkmarks if state ever initializes empty
     const stored = getStoredDayHabits();
     const storedHasData = stored && Object.values(stored).some((arr) => arr.length > 0);
     const currentHasData = dayHabits && Object.values(dayHabits).some((arr) => arr.length > 0);
@@ -226,7 +239,10 @@ const Dashboard = () => {
     }
     if (data.dayHabits && typeof data.dayHabits === "object") {
       const local = dayHabitsRef.current;
-      const merged = { ...data.dayHabits };
+      const merged: Record<string, string[]> = {};
+      for (const k of Object.keys(data.dayHabits)) {
+        if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
+      }
       for (const k of Object.keys(local)) {
         if (local[k]?.length) merged[k] = local[k];
       }
@@ -545,6 +561,8 @@ const Dashboard = () => {
               onViewChange={setActiveView}
               onPrev={() => setWeekOffset(prev => prev - 1)}
               onNext={() => setWeekOffset(prev => prev + 1)}
+              onJumpToThisWeek={() => setWeekOffset(0)}
+              showJumpToThisWeek={weekOffset !== 0}
               signedIn={true}
               userDisplayName={getDisplayName()}
               onSignIn={() => navigate("/")}
@@ -576,7 +594,7 @@ const Dashboard = () => {
                   dayName={day.dayName}
                   date={day.date}
                   habits={habits}
-                  completedHabits={dayHabits[day.date.toISOString()] || []}
+                  completedHabits={dayHabits[dateToStorageKey(day.date)] || []}
                   onToggleHabit={(habitId) => toggleHabit(day.date, habitId)}
                   fillWidth
                 />

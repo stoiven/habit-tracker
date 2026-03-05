@@ -67,6 +67,20 @@ export const isToday = (date: Date): boolean => {
   return date.toDateString() === today.toDateString();
 };
 
+/** Stable storage key for a date (YYYY-MM-DD) so save/restore match regardless of timezone. */
+export function dateToStorageKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Normalize a stored key to YYYY-MM-DD (handles legacy ISO keys). */
+export function normalizeDayHabitKey(key: string): string {
+  if (key.includes("T")) return key.slice(0, 10);
+  return key;
+}
+
 export const calculateProgress = (completed: number, total: number): number => {
   if (total === 0) return 0;
   return Math.round((completed / total) * 100);

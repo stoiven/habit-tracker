@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronDown, Settings, Search, Sparkles, User, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Settings, Search, Sparkles, User, LogOut, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,6 +24,8 @@ interface DashboardHeaderProps {
   onViewChange: (view: "week" | "month" | "dashboard") => void;
   onPrev: () => void;
   onNext: () => void;
+  onJumpToThisWeek?: () => void;
+  showJumpToThisWeek?: boolean;
   signedIn?: boolean;
   userDisplayName?: string;
   onSignIn?: () => void;
@@ -39,6 +41,8 @@ const DashboardHeader = ({
   onViewChange,
   onPrev,
   onNext,
+  onJumpToThisWeek,
+  showJumpToThisWeek,
   signedIn = false,
   userDisplayName = "Guest",
   onSignIn,
@@ -61,6 +65,18 @@ const DashboardHeader = ({
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
         </button>
       </div>
+      {showJumpToThisWeek && onJumpToThisWeek && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={onJumpToThisWeek}
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <CalendarDays className="w-4 h-4" />
+            Jump to this week
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <div className="flex rounded-sm overflow-hidden border border-border">

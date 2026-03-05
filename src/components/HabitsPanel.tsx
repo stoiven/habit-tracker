@@ -13,7 +13,7 @@ const HabitsPanel = ({ habits, doneCount, rate, onManageHabits }: HabitsPanelPro
 
   return (
     <div className="space-y-4">
-      {/* Stats Row */}
+      {/* Stats Row: habit checkmarks completed this week / success rate */}
       <div className="flex gap-4">
         <div className="bg-card rounded-sm shadow-card px-4 py-3 flex-1">
           <span className="text-xs text-muted-foreground uppercase tracking-wider block">Done</span>
@@ -21,6 +21,7 @@ const HabitsPanel = ({ habits, doneCount, rate, onManageHabits }: HabitsPanelPro
             <div className="w-12 h-1 bg-success rounded-full" />
             <span className="text-2xl font-bold text-foreground">{doneCount}</span>
           </div>
+          <span className="text-[10px] text-muted-foreground/80 block mt-0.5">This week</span>
         </div>
         <div className="bg-card rounded-sm shadow-card px-4 py-3 flex-1">
           <span className="text-xs text-muted-foreground uppercase tracking-wider block">Rate</span>
@@ -28,6 +29,7 @@ const HabitsPanel = ({ habits, doneCount, rate, onManageHabits }: HabitsPanelPro
             <div className="w-12 h-1 bg-chart-line rounded-full" />
             <span className="text-2xl font-bold text-chart-line">{rate}%</span>
           </div>
+          <span className="text-[10px] text-muted-foreground/80 block mt-0.5">This week</span>
         </div>
       </div>
 

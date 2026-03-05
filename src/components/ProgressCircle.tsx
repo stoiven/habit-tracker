@@ -46,7 +46,7 @@ const ProgressCircle = ({
           }}
         />
       </svg>
-      <span className={`absolute text-xl font-semibold ${isToday ? "text-primary-foreground" : "text-foreground"}`}>
+      <span className={`absolute text-xl font-semibold ${isToday ? "text-today-accent" : "text-foreground"}`}>
         {percentage}%
       </span>
     </div>

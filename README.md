@@ -1,6 +1,47 @@
-# Welcome to your Lovable project
+# HabiCard – Habit Tracker
 
-## Project info
+## Run locally (test without pushing)
+
+You can run the app on your machine and test changes without deploying or pushing to Git.
+
+```sh
+cd habit-tracker
+npm install
+npm run dev
+```
+
+Then open **http://localhost:5173** in your browser. Sign in with the owner email and password. Edits to the code will hot-reload.
+
+- **Build for production:** `npm run build`
+- **Preview production build locally:** `npm run preview` (serves the `dist` folder, usually at http://localhost:4173)
+
+---
+
+## Google Calendar
+
+To show this week’s events in the **My Week** view, connect a Google Calendar (read-only).
+
+1. **Google Cloud Console**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
+   - Enable **Google Calendar API**: APIs & Services → Library → search “Google Calendar API” → Enable.
+   - Create OAuth credentials: APIs & Services → Credentials → Create Credentials → **OAuth client ID**.
+   - Application type: **Web application**.
+   - Under **Authorized JavaScript origins** add:
+     - `http://localhost:5173` (local dev)
+     - Your production URL, e.g. `https://habit-tracker-snowy-six.vercel.app`
+   - Under **Authorized redirect URIs** you can leave empty for the token flow used here (popup).
+   - Copy the **Client ID** (e.g. `xxxxx.apps.googleusercontent.com`).
+
+2. **App**
+   - In the project root, copy `.env.example` to `.env`.
+   - Set `VITE_GOOGLE_CLIENT_ID=` to your Client ID.
+   - Restart the dev server (`npm run dev`). In production (e.g. Vercel), add the same env var in the project settings.
+
+You don’t need the app to be live first: localhost works as long as it’s listed as an authorized origin.
+
+---
+
+## Project info (Lovable)
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 

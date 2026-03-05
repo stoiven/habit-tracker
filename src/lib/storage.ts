@@ -56,3 +56,40 @@ export function getStoredMonthCompletion(): Record<string, string[]> | null {
 export function setStoredMonthCompletion(data: Record<string, string[]>): void {
   safeSet(KEY_MONTH_COMPLETION, data);
 }
+
+const KEY_DISTRACTIONS = "habicard_distractions";
+
+export interface Distraction {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export function getStoredDistractions(): Distraction[] | null {
+  const data = safeGet<Distraction[]>(KEY_DISTRACTIONS);
+  if (!Array.isArray(data)) return null;
+  return data;
+}
+
+export function setStoredDistractions(distractions: Distraction[]): void {
+  safeSet(KEY_DISTRACTIONS, distractions);
+}
+
+const KEY_TASKS = "habicard_tasks";
+
+export interface Task {
+  id: string;
+  label: string;
+  completed: boolean;
+  createdAt: string;
+}
+
+export function getStoredTasks(): Task[] | null {
+  const data = safeGet<Task[]>(KEY_TASKS);
+  if (!Array.isArray(data)) return null;
+  return data;
+}
+
+export function setStoredTasks(tasks: Task[]): void {
+  safeSet(KEY_TASKS, tasks);
+}

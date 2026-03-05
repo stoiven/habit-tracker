@@ -26,15 +26,23 @@ import {
   setStoredDayHabits,
   getStoredMonthCompletion,
   setStoredMonthCompletion,
+  getStoredDistractions,
+  setStoredDistractions,
+  getStoredTasks,
+  setStoredTasks,
+  type Distraction,
+  type Task,
 } from "@/lib/storage";
 import ManageHabitsDialog from "@/components/ManageHabitsDialog";
 import StreakMasterDialog from "@/components/StreakMasterDialog";
+import GoogleCalendarCard from "@/components/GoogleCalendarCard";
+import TaskListCard from "@/components/TaskListCard";
 
 type ViewType = "week" | "month" | "dashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState<ViewType>("dashboard");
+  const [activeView, setActiveView] = useState<ViewType>("week");
   const [habits, setHabits] = useState<Habit[]>(() => getStoredHabits() ?? defaultHabits);
   const [manageHabitsOpen, setManageHabitsOpen] = useState(false);
   const [streakDialogOpen, setStreakDialogOpen] = useState(false);
@@ -49,12 +57,16 @@ const Dashboard = () => {
     if (!ok) navigate("/", { replace: true });
   }, [navigate]);
 
-  // Week view data
+  // Week view data: start from current week (Monday of this week), then add weekOffset for prev/next
   const [weekOffset, setWeekOffset] = useState(0);
   const startOfWeek = useMemo(() => {
-    const now = new Date(2026, 0, 5); // Jan 5, 2026 - Monday
-    now.setDate(now.getDate() + weekOffset * 7);
-    return now;
+    const today = new Date();
+    const dayOfWeek = (today.getDay() + 6) % 7; // Mon=0, Sun=6
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - dayOfWeek);
+    const result = new Date(monday);
+    result.setDate(monday.getDate() + weekOffset * 7);
+    return result;
   }, [weekOffset]);
 
   const weekData = useMemo(() => generateWeekData(startOfWeek, habits), [startOfWeek, habits]);
@@ -136,6 +148,41 @@ const Dashboard = () => {
   useEffect(() => {
     setStoredMonthCompletion(monthCompletionByDay);
   }, [monthCompletionByDay]);
+
+  // Distractions (dashboard sidebar)
+  const [distractions, setDistractions] = useState<Distraction[]>(() => getStoredDistractions() ?? []);
+  useEffect(() => {
+    setStoredDistractions(distractions);
+  }, [distractions]);
+  const addDistraction = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setDistractions((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name: trimmed, createdAt: new Date().toISOString() },
+    ]);
+  };
+  const removeDistraction = (id: string) => {
+    setDistractions((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  // Tasks (My Week bottom-right). Persist in localStorage.
+  const [tasks, setTasks] = useState<Task[]>(() => getStoredTasks() ?? []);
+  useEffect(() => {
+    setStoredTasks(tasks);
+  }, [tasks]);
+  const addTask = (label: string) => {
+    setTasks((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), label, completed: false, createdAt: new Date().toISOString() },
+    ]);
+  };
+  const toggleTask = (id: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+  };
+  const removeTask = (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+  };
 
   const monthlyTrendData = useMemo(() => {
     const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
@@ -327,7 +374,15 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <aside className="lg:col-span-3">
-              <DashboardSidebar habits={habits} currentStreakDays={0} onManageHabits={() => setManageHabitsOpen(true)} onStreakClick={() => setStreakDialogOpen(true)} />
+              <DashboardSidebar
+                habits={habits}
+                currentStreakDays={0}
+                onManageHabits={() => setManageHabitsOpen(true)}
+                onStreakClick={() => setStreakDialogOpen(true)}
+                distractions={distractions}
+                onAddDistraction={addDistraction}
+                onRemoveDistraction={removeDistraction}
+              />
             </aside>
 
             <main className="lg:col-span-9 space-y-4">
@@ -407,6 +462,19 @@ const Dashboard = () => {
               />
             ))}
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <GoogleCalendarCard
+            weekStart={weekData.startDate}
+            weekEnd={weekData.endDate}
+          />
+          <TaskListCard
+            tasks={tasks}
+            onAddTask={addTask}
+            onToggleTask={toggleTask}
+            onRemoveTask={removeTask}
+          />
         </div>
       </div>
     </div>

@@ -22,8 +22,6 @@ function corsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-export const config = { runtime: "edge" };
-
 export async function GET(request: Request): Promise<Response> {
   const origin = request.headers.get("Origin") || null;
   if (request.method === "OPTIONS") {

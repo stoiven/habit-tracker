@@ -270,7 +270,7 @@ const Dashboard = () => {
 
   if (activeView === "month") {
     return (
-      <div className="dark min-h-screen bg-background p-4 lg:p-6">
+      <div className="dark min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <StreakMasterDialog
           open={streakDialogOpen}
           onOpenChange={setStreakDialogOpen}
@@ -350,7 +350,7 @@ const Dashboard = () => {
 
   if (activeView === "dashboard") {
     return (
-      <div className="dark min-h-screen bg-background p-4 lg:p-6">
+      <div className="dark min-h-screen bg-background p-3 sm:p-4 lg:p-6">
         <StreakMasterDialog
           open={streakDialogOpen}
           onOpenChange={setStreakDialogOpen}
@@ -409,7 +409,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dark min-h-screen bg-background p-4 lg:p-6">
+    <div className="dark min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <ManageHabitsDialog
         open={manageHabitsOpen}
         onOpenChange={setManageHabitsOpen}
@@ -448,18 +448,19 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="w-full pb-4">
-          <div className="grid grid-cols-7 gap-4 w-full min-w-0">
+        <div className="w-full pb-4 overflow-hidden">
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-3 px-3 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-7 lg:overflow-visible lg:min-w-0">
             {weekData.days.map((day, index) => (
-              <DayCard
-                key={index}
-                dayName={day.dayName}
-                date={day.date}
-                habits={habits}
-                completedHabits={dayHabits[day.date.toISOString()] || []}
-                onToggleHabit={(habitId) => toggleHabit(day.date, habitId)}
-                fillWidth
-              />
+              <div key={index} className="flex-shrink-0 w-[280px] lg:w-auto lg:min-w-0">
+                <DayCard
+                  dayName={day.dayName}
+                  date={day.date}
+                  habits={habits}
+                  completedHabits={dayHabits[day.date.toISOString()] || []}
+                  onToggleHabit={(habitId) => toggleHabit(day.date, habitId)}
+                  fillWidth
+                />
+              </div>
             ))}
           </div>
         </div>

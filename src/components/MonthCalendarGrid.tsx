@@ -74,23 +74,23 @@ const MonthCalendarGrid = ({
   });
 
   return (
-    <div className={`overflow-hidden border border-border ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
-      <div className="flex w-full min-w-0">
+    <div className={`overflow-x-auto overflow-y-hidden border border-border ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
+      <div className="flex w-full min-w-0" style={{ minWidth: "640px" }}>
         {/* Left: habit list */}
-        <div className="w-36 shrink-0 border-r border-border p-3 space-y-1 bg-card">
-          <button type="button" className="text-xs font-semibold text-foreground uppercase tracking-wider w-full text-left">
+        <div className="w-16 sm:w-24 lg:w-36 shrink-0 border-r border-border p-2 sm:p-3 space-y-1 bg-card">
+          <button type="button" className="text-[10px] sm:text-xs font-semibold text-foreground uppercase tracking-wider w-full text-left truncate">
             + Habits
           </button>
-          <div className="pt-2" />
+          <div className="pt-1 sm:pt-2" />
           {habits.map((h) => (
-            <div key={h.id} className="text-xs text-foreground py-0.5 truncate">
+            <div key={h.id} className="text-[10px] sm:text-xs text-foreground py-0.5 truncate">
               {h.name}
             </div>
           ))}
         </div>
 
         {/* Center: calendar grid with WEEK labels */}
-        <div className="flex-1 min-w-0 overflow-x-auto bg-card">
+        <div className="flex-1 min-w-[200px] overflow-x-auto bg-card">
           <table className="w-full border-collapse" style={{ tableLayout: "fixed", minWidth: "max-content" }}>
             <thead>
               {/* WEEK 1, WEEK 2, ... row */}
@@ -99,9 +99,9 @@ const MonthCalendarGrid = ({
                   <th
                     key={weekIndex}
                     colSpan={end - start + 1}
-                    className="text-[10px] font-semibold text-foreground border-b border-border px-1 py-1.5 text-left"
+                    className="text-[8px] sm:text-[10px] font-semibold text-foreground border-b border-border px-0.5 sm:px-1 py-1 sm:py-1.5 text-left"
                   >
-                    WEEK {weekIndex + 1}
+                    <span className="hidden sm:inline">WEEK </span>{weekIndex + 1}
                   </th>
                 ))}
               </tr>
@@ -109,7 +109,7 @@ const MonthCalendarGrid = ({
                 {days.map((d) => (
                   <th
                     key={dateKey(d.date)}
-                    className="text-[10px] font-medium text-muted-foreground border-b border-border px-0.5 py-2 w-7 min-w-7"
+                    className="text-[8px] sm:text-[10px] font-medium text-muted-foreground border-b border-border px-0.5 py-1 sm:py-2 w-6 min-w-6 sm:w-7 sm:min-w-7"
                   >
                     {DAY_LETTERS[d.dayInWeek]}
                   </th>
@@ -121,7 +121,7 @@ const MonthCalendarGrid = ({
                   return (
                     <th
                       key={dateKey(d.date)}
-                      className={`text-[10px] font-medium border-b border-border px-0.5 py-1 w-7 min-w-7 ${
+                      className={`text-[8px] sm:text-[10px] font-medium border-b border-border px-0.5 py-0.5 sm:py-1 w-6 min-w-6 sm:w-7 sm:min-w-7 ${
                         isCurrentDay
                           ? "bg-[hsl(150,60%,28%)] text-white"
                           : "text-foreground"
@@ -142,12 +142,12 @@ const MonthCalendarGrid = ({
                     return (
                       <td
                         key={key}
-                        className="border-b border-border p-0.5 w-7 min-w-7 h-7 align-middle"
+                        className="border-b border-border p-0.5 w-6 min-w-6 sm:w-7 sm:min-w-7 h-6 sm:h-7 align-middle"
                       >
                         <button
                           type="button"
                           onClick={() => onToggle?.(d.date, h.id)}
-                          className={`w-full h-6 flex items-center justify-center rounded border transition-colors ${
+                          className={`w-full h-5 sm:h-6 flex items-center justify-center rounded border transition-colors ${
                             lightTheme
                               ? completed
                                 ? "bg-muted/60 text-foreground border-border"
@@ -169,17 +169,17 @@ const MonthCalendarGrid = ({
         </div>
 
         {/* Right: monthly summary */}
-        <div className="w-40 shrink-0 border-l border-border p-3 bg-card">
-          <h4 className="text-xs font-semibold tracking-wider text-foreground uppercase mb-3">
-            Monthly Summary
+        <div className="w-20 sm:w-28 lg:w-40 shrink-0 border-l border-border p-2 sm:p-3 bg-card">
+          <h4 className="text-[10px] sm:text-xs font-semibold tracking-wider text-foreground uppercase mb-2 sm:mb-3 truncate">
+            Summary
           </h4>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {habitStats.map(({ habit, done, miss, pct }) => (
-              <div key={habit.id} className="text-xs">
+              <div key={habit.id} className="text-[10px] sm:text-xs">
                 <p className="font-medium text-foreground truncate">{habit.name}</p>
-                <p className="text-muted-foreground">Success % {pct}%</p>
+                <p className="text-muted-foreground">{pct}%</p>
                 <p className="text-muted-foreground">
-                  DONE {done}  MISS {miss}
+                  {done}/{miss}
                 </p>
               </div>
             ))}

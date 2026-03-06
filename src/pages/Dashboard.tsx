@@ -228,6 +228,9 @@ const Dashboard = () => {
   const isInitialSyncDoneRef = useRef(false);
   const lastLocalCheckChangeRef = useRef(0);
   const lastPushAtRef = useRef(0);
+  const lastApplyAtRef = useRef(0);
+  const mountTimeRef = useRef(0);
+  if (mountTimeRef.current === 0) mountTimeRef.current = Date.now();
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
@@ -257,6 +260,7 @@ const Dashboard = () => {
     const skipCheckmarks = !isFirstApply && (justToggled || justPushed);
 
     if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
+      lastApplyAtRef.current = Date.now();
       const merged: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
         if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
@@ -265,6 +269,7 @@ const Dashboard = () => {
       setStoredDayHabits(merged);
     }
     if (!skipCheckmarks && data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+      lastApplyAtRef.current = Date.now();
       setMonthCompletionByDay({ ...data.monthCompletionByDay });
       setStoredMonthCompletion(data.monthCompletionByDay);
     }
@@ -365,12 +370,17 @@ const Dashboard = () => {
 
   // Cross-device sync: push to API when data changes (debounced so cloud updates quickly after toggle)
   const PUSH_DEBOUNCE_MS = 400;
+  const PUSH_AFTER_MOUNT_MS = 4000;
+  const PUSH_AFTER_APPLY_MS = 6000;
   useEffect(() => {
     if (!allowed) return;
     const user = getUser();
     const email = user?.email?.trim();
     if (!email || !email.includes("@") || !isSyncConfigured()) return;
     const t = setTimeout(() => {
+      const now = Date.now();
+      if (now - mountTimeRef.current < PUSH_AFTER_MOUNT_MS) return;
+      if (now - lastApplyAtRef.current < PUSH_AFTER_APPLY_MS && lastLocalCheckChangeRef.current < lastApplyAtRef.current) return;
       pushSyncData(email, {
         habits,
         dayHabits,

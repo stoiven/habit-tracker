@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronDown, Settings, Search, Sparkles, User, LogOut, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Settings, Search, Sparkles, User, LogOut, CalendarDays, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,6 +31,8 @@ interface DashboardHeaderProps {
   onSignIn?: () => void;
   onSignOut?: () => void;
   onProfile?: () => void;
+  onSyncNow?: () => void;
+  syncEnabled?: boolean;
   segmentStyle?: "green" | "black";
   rounded?: boolean;
 }
@@ -48,6 +50,8 @@ const DashboardHeader = ({
   onSignIn,
   onSignOut,
   onProfile,
+  onSyncNow,
+  syncEnabled,
   segmentStyle = "green",
   rounded,
 }: DashboardHeaderProps) => {
@@ -116,6 +120,12 @@ const DashboardHeader = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="dark min-w-[10rem]">
+                {syncEnabled && onSyncNow && (
+                  <DropdownMenuItem onClick={onSyncNow}>
+                    <Cloud className="h-4 w-4 mr-2" />
+                    Sync now
+                  </DropdownMenuItem>
+                )}
                 {onProfile && (
                   <DropdownMenuItem onClick={onProfile}>
                     <User className="h-4 w-4 mr-2" />

@@ -286,6 +286,8 @@ const Dashboard = () => {
           toast.error("Sync failed: check SYNC_SECRET and VITE_SYNC_SECRET match and are set in Vercel.");
         } else if (status != null && status >= 500) {
           toast.error("Sync server error. Check Vercel Blob is connected.");
+        } else if (status === 404) {
+          toast.error("Sync API not found. Use the deployed app URL (not localhost) for cross-device sync.");
         } else {
           toast.error("Sync fetch failed. Check Network tab for /api/data.");
         }
@@ -308,7 +310,42 @@ const Dashboard = () => {
     );
   }, [allowed]);
 
-  // Cross-device sync: fetch on load but do NOT apply dayHabits/monthCompletionByDay (so refresh keeps localStorage checkmarks)
+  // Manual "Sync now": push then fetch so user can force cross-device sync
+  const handleSyncNow = useCallback(() => {
+    const user = getUser();
+    const email = user?.email?.trim();
+    if (!email || !email.includes("@") || !isSyncConfigured()) {
+      toast.error("Sign in with an email and set VITE_SYNC_SECRET in Vercel to sync.");
+      return;
+    }
+    toast.info("Syncing…", { duration: 1000 });
+    pushSyncData(email, {
+      habits,
+      dayHabits,
+      monthCompletionByDay,
+      tasks,
+      distractions,
+    }).then((pushResult) => {
+      if (!pushResult.ok) {
+        const status = "status" in pushResult ? pushResult.status : undefined;
+        if (status === 401) toast.error("Sync save failed: secrets must match in Vercel.");
+        else if (status === 404) toast.error("Sync API not found. Use the deployed URL (not localhost).");
+        else if (status != null && status >= 500) toast.error("Sync save failed. Check Vercel Blob.");
+        else toast.error("Sync save failed.");
+        return;
+      }
+      fetchSyncDataWithStatus(email).then((fetchResult) => {
+        if (fetchResult.ok && fetchResult.data) {
+          applySyncPayload(fetchResult.data, true);
+          toast.success("Synced: saved and loaded from cloud.", { duration: 3000 });
+        } else if (!fetchResult.ok) {
+          toast.success("Saved to cloud. Load failed on this device.", { duration: 3000 });
+        }
+      });
+    });
+  }, [habits, dayHabits, monthCompletionByDay, tasks, distractions, applySyncPayload]);
+
+  // Cross-device sync: fetch on load
   useEffect(() => {
     runSyncFetch(false);
   }, [runSyncFetch]);
@@ -337,12 +374,16 @@ const Dashboard = () => {
         tasks,
         distractions,
       }).then((result) => {
-        if (!result.ok) {
+        if (result.ok) {
+          toast.success("Saved to cloud", { duration: 2000 });
+        } else {
           const status = "status" in result ? result.status : undefined;
           if (status === 401) {
             toast.error("Sync save failed: SYNC_SECRET and VITE_SYNC_SECRET must match in Vercel.");
           } else if (status != null && status >= 500) {
             toast.error("Sync save failed. Check Vercel Blob is connected.");
+          } else if (status === 404) {
+            toast.error("Sync API not found. Use the deployed app URL (not localhost) for cross-device sync.");
           } else {
             toast.error("Sync save failed. Check Network tab for /api/data.");
           }
@@ -464,6 +505,8 @@ const Dashboard = () => {
             onSignIn={() => navigate("/")}
             onSignOut={() => { clearUser(); navigate("/"); }}
             onProfile={() => navigate("/profile")}
+            onSyncNow={handleSyncNow}
+            syncEnabled={isSyncConfigured()}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -538,6 +581,8 @@ const Dashboard = () => {
             onSignIn={() => navigate("/")}
             onSignOut={() => { clearUser(); navigate("/"); }}
             onProfile={() => navigate("/profile")}
+            onSyncNow={handleSyncNow}
+            syncEnabled={isSyncConfigured()}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -600,6 +645,8 @@ const Dashboard = () => {
               onSignIn={() => navigate("/")}
               onSignOut={() => { clearUser(); navigate("/"); }}
               onProfile={() => navigate("/profile")}
+              onSyncNow={handleSyncNow}
+              syncEnabled={isSyncConfigured()}
             />
             <HabitsPanel habits={habits} doneCount={totalCompleted} rate={weeklyRate} onManageHabits={() => setManageHabitsOpen(true)} />
           </div>

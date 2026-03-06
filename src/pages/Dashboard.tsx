@@ -349,7 +349,8 @@ const Dashboard = () => {
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [allowed, runSyncFetch]);
 
-  // Cross-device sync: push to API when data changes (debounced)
+  // Cross-device sync: push to API when data changes (debounced ~0.8s so cloud updates quickly)
+  const PUSH_DEBOUNCE_MS = 800;
   useEffect(() => {
     if (!allowed) return;
     const user = getUser();
@@ -378,9 +379,19 @@ const Dashboard = () => {
           }
         }
       });
-    }, 1500);
+    }, PUSH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [allowed, habits, dayHabits, monthCompletionByDay, tasks, distractions]);
+
+  // Poll for cloud updates every 15s when tab is visible so the other device sees changes without refreshing
+  const SYNC_POLL_INTERVAL_MS = 15_000;
+  useEffect(() => {
+    if (!allowed || !isSyncConfigured()) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") runSyncFetch(true);
+    }, SYNC_POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [allowed, runSyncFetch]);
 
   const monthlyTrendData = useMemo(() => {
     const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();

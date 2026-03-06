@@ -227,6 +227,7 @@ const Dashboard = () => {
   const monthCompletionByDayRef = useRef<Record<string, string[]>>(monthCompletionByDay);
   const isInitialSyncDoneRef = useRef(false);
   const lastLocalCheckChangeRef = useRef(0);
+  const lastPushAtRef = useRef(0);
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
@@ -248,9 +249,11 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // Don't overwrite dayHabits/month if user just toggled here (prevents poll from re-checking after uncheck)
-    const cooldownMs = 5000;
-    const skipCheckmarks = Date.now() - lastLocalCheckChangeRef.current < cooldownMs;
+    // Don't overwrite dayHabits/month if we just toggled or just pushed (stale cloud from other device would re-check)
+    const now = Date.now();
+    const justToggled = now - lastLocalCheckChangeRef.current < 8000;
+    const justPushed = now - lastPushAtRef.current < 12000;
+    const skipCheckmarks = justToggled || justPushed;
 
     if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
       const merged: Record<string, string[]> = {};
@@ -328,6 +331,7 @@ const Dashboard = () => {
         else toast.error("Sync save failed.");
         return;
       }
+      lastPushAtRef.current = Date.now();
       fetchSyncDataWithStatus(email).then((fetchResult) => {
         if (fetchResult.ok && fetchResult.data) {
           applySyncPayload(fetchResult.data, true);
@@ -374,6 +378,7 @@ const Dashboard = () => {
         distractions,
       }).then((result) => {
         if (result.ok) {
+          lastPushAtRef.current = Date.now();
           toast.success("Saved to cloud", { duration: 2000 });
         } else {
           const status = "status" in result ? result.status : undefined;

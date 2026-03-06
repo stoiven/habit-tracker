@@ -246,18 +246,38 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // Apply dayHabits/month from cloud as source of truth so check and uncheck both sync
+    // Merge dayHabits/month: union of local and cloud so checkmarks only add, never remove from sync.
+    // Unchecking only happens when you manually uncheck on this device.
     if (data.dayHabits && typeof data.dayHabits === "object") {
-      const merged: Record<string, string[]> = {};
+      const local = dayHabitsRef.current;
+      const cloudByKey: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
-        if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
+        if (Array.isArray(data.dayHabits[k])) cloudByKey[normalizeDayHabitKey(k)] = data.dayHabits[k];
+      }
+      const allKeys = new Set([...Object.keys(cloudByKey), ...Object.keys(local)]);
+      const merged: Record<string, string[]> = {};
+      for (const k of allKeys) {
+        const a = local[k] ?? [];
+        const b = cloudByKey[k] ?? [];
+        merged[k] = [...new Set([...a, ...b])];
       }
       setDayHabits(merged);
       setStoredDayHabits(merged);
     }
     if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-      setMonthCompletionByDay({ ...data.monthCompletionByDay });
-      setStoredMonthCompletion(data.monthCompletionByDay);
+      const local = monthCompletionByDayRef.current;
+      const allKeys = new Set([
+        ...Object.keys(data.monthCompletionByDay),
+        ...Object.keys(local),
+      ]);
+      const merged: Record<string, string[]> = {};
+      for (const k of allKeys) {
+        const a = local[k] ?? [];
+        const b = Array.isArray(data.monthCompletionByDay[k]) ? data.monthCompletionByDay[k] : [];
+        merged[k] = [...new Set([...a, ...b])];
+      }
+      setMonthCompletionByDay(merged);
+      setStoredMonthCompletion(merged);
     }
   }, []);
 

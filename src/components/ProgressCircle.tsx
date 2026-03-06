@@ -13,7 +13,9 @@ const ProgressCircle = ({
 }: ProgressCircleProps) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (percentage / 100) * circumference;
+  const pct = Math.min(100, percentage);
+  const offset = circumference - (pct / 100) * circumference;
+  const displayPct = percentage < 1 && percentage > 0 ? percentage.toFixed(1) : Math.round(percentage);
   
   const strokeColor = isToday && percentage === 100 
     ? "hsl(var(--today-accent))" 
@@ -47,7 +49,7 @@ const ProgressCircle = ({
         />
       </svg>
       <span className={`absolute text-xl font-semibold ${isToday ? "text-today-accent" : "text-foreground"}`}>
-        {percentage}%
+        {displayPct}%
       </span>
     </div>
   );

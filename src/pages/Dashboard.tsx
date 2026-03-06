@@ -110,7 +110,8 @@ const Dashboard = () => {
   // Stats for the currently displayed week only (so DONE / RATE match the 7 day cards)
   const totalCompleted = weekData.days.reduce((sum, day) => sum + (dayHabits[dateToStorageKey(day.date)] || []).length, 0);
   const totalPossible = 7 * habits.filter(h => h.isActive).length;
-  const weeklyRate = totalPossible ? Math.round((totalCompleted / totalPossible) * 100) : 0;
+  const weeklyRateExact = totalPossible ? (totalCompleted / totalPossible) * 100 : 0;
+  const weeklyRate = Math.round(weeklyRateExact);
 
   const chartData = weekData.days.map(day => ({
     day: day.dayName.slice(0, 3),
@@ -499,7 +500,8 @@ const Dashboard = () => {
     }
     return total;
   }, [displayYear, displayMonth, dayHabits]);
-  const monthRate = monthTotalPossible ? Math.round((monthCompleted / monthTotalPossible) * 100) : 0;
+  const monthRateExact = monthTotalPossible ? (monthCompleted / monthTotalPossible) * 100 : 0;
+  const monthRate = Math.round(monthRateExact);
 
   const weeklyOverviewData = useMemo(() => {
     const weeks: { label: string; range: string; successRate: number; completed: number; total: number; dailyValues: number[] }[] = [];
@@ -616,8 +618,8 @@ const Dashboard = () => {
               <MonthlySuccessCard
                 completed={monthCompleted}
                 total={monthTotalPossible}
-                percentage={monthRate}
-                story={monthRate > 0 ? `You completed ${monthCompleted} habit checks this month. Keep it up!` : "Complete habits to see your story here."}
+                percentage={monthRateExact}
+                story={monthRateExact > 0 ? `You completed ${monthCompleted} habit checks this month. Keep it up!` : "Complete habits to see your story here."}
               />
             </div>
           </div>
@@ -744,7 +746,7 @@ const Dashboard = () => {
           </div>
           <div className="lg:col-span-3">
             <WeeklySuccess
-              percentage={weeklyRate}
+              percentage={weeklyRateExact}
               completed={totalCompleted}
               total={totalPossible}
               vsPrev={0}

@@ -88,6 +88,7 @@ const Dashboard = () => {
   });
 
   const toggleHabit = (dayDate: Date, habitId: string) => {
+    lastLocalCheckChangeRef.current = Date.now();
     const key = dateToStorageKey(dayDate);
     setDayHabits(prev => {
       const current = prev[key] || [];
@@ -225,6 +226,7 @@ const Dashboard = () => {
   const dayHabitsRef = useRef<Record<string, string[]>>(dayHabits);
   const monthCompletionByDayRef = useRef<Record<string, string[]>>(monthCompletionByDay);
   const isInitialSyncDoneRef = useRef(false);
+  const lastLocalCheckChangeRef = useRef(0);
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
@@ -246,8 +248,11 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // dayHabits/month: cloud is source of truth — check and uncheck both sync (last action wins)
-    if (data.dayHabits && typeof data.dayHabits === "object") {
+    // Don't overwrite dayHabits/month if user just toggled here (prevents poll from re-checking after uncheck)
+    const cooldownMs = 5000;
+    const skipCheckmarks = Date.now() - lastLocalCheckChangeRef.current < cooldownMs;
+
+    if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
       const merged: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
         if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
@@ -255,7 +260,7 @@ const Dashboard = () => {
       setDayHabits(merged);
       setStoredDayHabits(merged);
     }
-    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+    if (!skipCheckmarks && data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
       setMonthCompletionByDay({ ...data.monthCompletionByDay });
       setStoredMonthCompletion(data.monthCompletionByDay);
     }
@@ -461,6 +466,7 @@ const Dashboard = () => {
   }, [displayYear, displayMonth, monthCompletionByDay, habits]);
 
   const toggleMonthHabit = (date: Date, habitId: string) => {
+    lastLocalCheckChangeRef.current = Date.now();
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     setMonthCompletionByDay((prev) => {
       const cur = prev[key] || [];

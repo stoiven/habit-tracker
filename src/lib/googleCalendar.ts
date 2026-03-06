@@ -130,7 +130,9 @@ export function requestCalendarToken(
       }
     },
   });
-  client.requestAccessToken({ prompt: "consent" });
+  // Don't use prompt: "consent" — that forces the consent screen every time.
+  // Omitting prompt lets Google reuse existing authorization when the app already has access.
+  client.requestAccessToken();
 }
 
 /**

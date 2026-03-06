@@ -589,7 +589,7 @@ const Dashboard = () => {
               year={displayYear}
               month={displayMonth}
               monthName={monthNames[displayMonth]}
-              habits={[{ id: "mood", name: "Mood", isActive: true }, ...habits]}
+              habits={habits}
               completionByDay={monthCompletionByDay}
               onToggle={toggleMonthHabit}
             />

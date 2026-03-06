@@ -76,17 +76,23 @@ const MonthCalendarGrid = ({
   return (
     <div className={`overflow-x-auto overflow-y-hidden border border-border ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
       <div className="flex w-full min-w-0" style={{ minWidth: "640px" }}>
-        {/* Left: habit list */}
-        <div className="w-16 sm:w-24 lg:w-36 shrink-0 border-r border-border p-2 sm:p-3 space-y-1 bg-card">
-          <button type="button" className="text-[10px] sm:text-xs font-semibold text-foreground uppercase tracking-wider w-full text-left truncate">
-            + Habits
-          </button>
-          <div className="pt-1 sm:pt-2" />
-          {habits.map((h) => (
-            <div key={h.id} className="text-[10px] sm:text-xs text-foreground py-0.5 truncate">
-              {h.name}
-            </div>
-          ))}
+        {/* Left: habit list — row heights match table body (h-6 sm:h-7) so names align with grid rows */}
+        <div className="w-16 sm:w-24 lg:w-36 shrink-0 border-r border-border bg-card flex flex-col">
+          <div className="p-2 sm:p-3 pb-1 sm:pb-1.5">
+            <button type="button" className="text-[10px] sm:text-xs font-semibold text-foreground uppercase tracking-wider w-full text-left truncate">
+              + Habits
+            </button>
+          </div>
+          <div className="flex-1 flex flex-col">
+            {habits.map((h) => (
+              <div
+                key={h.id}
+                className="h-6 sm:h-7 flex items-center px-2 sm:px-3 border-b border-border text-[10px] sm:text-xs text-foreground truncate"
+              >
+                {h.name}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Center: calendar grid with WEEK labels */}

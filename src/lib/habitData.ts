@@ -27,7 +27,7 @@ export const defaultHabits: Habit[] = [
 
 export const generateWeekData = (startDate: Date, habits: Habit[]): WeekData => {
   const days: DayData[] = [];
-  const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   
   for (let i = 0; i < 7; i++) {
     const date = new Date(startDate);

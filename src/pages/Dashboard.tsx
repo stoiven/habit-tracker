@@ -59,15 +59,14 @@ const Dashboard = () => {
     if (!ok) navigate("/", { replace: true });
   }, [navigate]);
 
-  // Week view data: start from current week (Monday of this week), then add weekOffset for prev/next
+  // Week view data: start from current week (Sunday on the left), then add weekOffset for prev/next
   const [weekOffset, setWeekOffset] = useState(0);
   const startOfWeek = useMemo(() => {
     const today = new Date();
-    const dayOfWeek = (today.getDay() + 6) % 7; // Mon=0, Sun=6
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - dayOfWeek);
-    const result = new Date(monday);
-    result.setDate(monday.getDate() + weekOffset * 7);
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+    const result = new Date(sunday);
+    result.setDate(sunday.getDate() + weekOffset * 7);
     return result;
   }, [weekOffset]);
 

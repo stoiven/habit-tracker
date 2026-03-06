@@ -234,7 +234,7 @@ const Dashboard = () => {
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
-  const applySyncPayload = useCallback((data: SyncPayload, _isFromVisibilityChange: boolean) => {
+  const applySyncPayload = useCallback((data: SyncPayload, _isFromVisibilityChange: boolean, fetchStartedAt?: number) => {
     if (!data) return;
     const isFirstApply = !isInitialSyncDoneRef.current;
     if (isFirstApply) isInitialSyncDoneRef.current = true;
@@ -255,7 +255,9 @@ const Dashboard = () => {
 
     const now = Date.now();
     const justToggledHere = now - lastLocalCheckChangeRef.current < 10000;
-    const skipCheckmarks = !isFirstApply && justToggledHere;
+    const pushIsNewerThanFetch = typeof fetchStartedAt === "number" && lastPushAtRef.current > fetchStartedAt;
+    const skipCheckmarks =
+      !isFirstApply && (justToggledHere || pushIsNewerThanFetch);
 
     if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
       lastApplyAtRef.current = Date.now();
@@ -278,9 +280,10 @@ const Dashboard = () => {
     const user = getUser();
     const email = user?.email?.trim();
     if (!email || !email.includes("@") || !isSyncConfigured()) return;
+    const fetchStartedAt = Date.now();
     fetchSyncDataWithStatus(email).then((result) => {
       if (result.ok && result.data) {
-        applySyncPayload(result.data, isFromVisibilityChange);
+        applySyncPayload(result.data, isFromVisibilityChange, fetchStartedAt);
       } else if (!result.ok) {
         const status = "status" in result ? result.status : undefined;
         if (status === 401) {

@@ -253,11 +253,10 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // On first apply (e.g. mobile after refresh) always apply checkmarks so web updates show. Otherwise don't overwrite if we just toggled or pushed.
+    // Only skip applying checkmarks if WE just toggled here (so we don't overwrite our own action with stale cloud). The other device should always apply so it sees our check/uncheck without refresh.
     const now = Date.now();
-    const justToggled = now - lastLocalCheckChangeRef.current < 8000;
-    const justPushed = now - lastPushAtRef.current < 12000;
-    const skipCheckmarks = !isFirstApply && (justToggled || justPushed);
+    const justToggledHere = now - lastLocalCheckChangeRef.current < 6000;
+    const skipCheckmarks = !isFirstApply && justToggledHere;
 
     if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
       lastApplyAtRef.current = Date.now();
@@ -407,18 +406,18 @@ const Dashboard = () => {
     return () => clearTimeout(t);
   }, [allowed, habits, dayHabits, monthCompletionByDay, tasks, distractions]);
 
-  // Poll for cloud updates every 5s (no visibility check so mobile always gets web updates)
-  const SYNC_POLL_INTERVAL_MS = 5_000;
+  // Poll every 3s so the other device sees check/uncheck without refreshing
+  const SYNC_POLL_INTERVAL_MS = 3_000;
   useEffect(() => {
     if (!allowed || !isSyncConfigured()) return;
     const id = setInterval(() => runSyncFetch(true), SYNC_POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [allowed, runSyncFetch]);
 
-  // Early refetch 2s after load so mobile picks up a web change soon after opening the app
+  // Refetch 1.5s after load so the other device sees latest soon after opening the app
   useEffect(() => {
     if (!allowed || !isSyncConfigured()) return;
-    const t = setTimeout(() => runSyncFetch(true), 2_000);
+    const t = setTimeout(() => runSyncFetch(true), 1_500);
     return () => clearTimeout(t);
   }, [allowed, runSyncFetch]);
 

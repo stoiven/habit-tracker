@@ -228,10 +228,9 @@ const Dashboard = () => {
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
-  const applySyncPayload = useCallback((data: SyncPayload, isFromVisibilityChange: boolean) => {
+  const applySyncPayload = useCallback((data: SyncPayload, _isFromVisibilityChange: boolean) => {
     if (!data) return;
-    const isFirstLoad = !isInitialSyncDoneRef.current;
-    if (isFirstLoad) isInitialSyncDoneRef.current = true;
+    isInitialSyncDoneRef.current = true;
 
     // Always apply habits, tasks, distractions so cross-device works on first load
     if (Array.isArray(data.habits) && data.habits.length > 0) {
@@ -250,7 +249,7 @@ const Dashboard = () => {
     const local = dayHabitsRef.current;
     const localMonth = monthCompletionByDayRef.current;
 
-    // dayHabits: on first load use full cloud so mobile gets web updates; after that union so sync never removes checkmarks
+    // dayHabits/month: always union (local ∪ cloud) so web checkmarks show on mobile and sync never removes a check
     if (data.dayHabits && typeof data.dayHabits === "object") {
       const cloudByKey: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
@@ -261,11 +260,7 @@ const Dashboard = () => {
       for (const k of allKeys) {
         const a = local[k] ?? [];
         const b = cloudByKey[k] ?? [];
-        if (isFirstLoad) {
-          merged[k] = b.length > 0 ? b : a;
-        } else {
-          merged[k] = [...new Set([...a, ...b])];
-        }
+        merged[k] = [...new Set([...a, ...b])];
       }
       setDayHabits(merged);
       setStoredDayHabits(merged);
@@ -279,11 +274,7 @@ const Dashboard = () => {
       for (const k of allKeys) {
         const a = localMonth[k] ?? [];
         const b = Array.isArray(data.monthCompletionByDay[k]) ? data.monthCompletionByDay[k] : [];
-        if (isFirstLoad) {
-          merged[k] = b.length > 0 ? b : a;
-        } else {
-          merged[k] = [...new Set([...a, ...b])];
-        }
+        merged[k] = [...new Set([...a, ...b])];
       }
       setMonthCompletionByDay(merged);
       setStoredMonthCompletion(merged);
@@ -416,14 +407,19 @@ const Dashboard = () => {
     return () => clearTimeout(t);
   }, [allowed, habits, dayHabits, monthCompletionByDay, tasks, distractions]);
 
-  // Poll for cloud updates every 10s when tab is visible so the other device sees changes without refreshing
-  const SYNC_POLL_INTERVAL_MS = 10_000;
+  // Poll for cloud updates every 5s (no visibility check so mobile always gets web updates)
+  const SYNC_POLL_INTERVAL_MS = 5_000;
   useEffect(() => {
     if (!allowed || !isSyncConfigured()) return;
-    const id = setInterval(() => {
-      if (document.visibilityState === "visible") runSyncFetch(true);
-    }, SYNC_POLL_INTERVAL_MS);
+    const id = setInterval(() => runSyncFetch(true), SYNC_POLL_INTERVAL_MS);
     return () => clearInterval(id);
+  }, [allowed, runSyncFetch]);
+
+  // Early refetch 2s after load so mobile picks up a web change soon after opening the app
+  useEffect(() => {
+    if (!allowed || !isSyncConfigured()) return;
+    const t = setTimeout(() => runSyncFetch(true), 2_000);
+    return () => clearTimeout(t);
   }, [allowed, runSyncFetch]);
 
   const monthlyTrendData = useMemo(() => {

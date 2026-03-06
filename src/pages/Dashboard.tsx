@@ -281,16 +281,33 @@ const Dashboard = () => {
     fetchSyncDataWithStatus(email).then((result) => {
       if (result.ok && result.data) {
         applySyncPayload(result.data, isFromVisibilityChange);
-      } else if (!result.ok && "status" in result) {
-        const status = result.status;
+      } else if (!result.ok) {
+        const status = "status" in result ? result.status : undefined;
         if (status === 401) {
           toast.error("Sync failed: check SYNC_SECRET and VITE_SYNC_SECRET match and are set in Vercel.");
         } else if (status != null && status >= 500) {
           toast.error("Sync server error. Check Vercel Blob is connected.");
+        } else {
+          toast.error("Sync fetch failed. Check Network tab for /api/data.");
         }
       }
     });
   }, [allowed, applySyncPayload]);
+
+  // Tell user once per session if sync is off (so they know why cross-device doesn't work)
+  const hasShownSyncOffRef = useRef(false);
+  useEffect(() => {
+    if (!allowed || hasShownSyncOffRef.current) return;
+    const user = getUser();
+    const email = user?.email?.trim();
+    if (!email || !email.includes("@")) return;
+    if (isSyncConfigured()) return;
+    hasShownSyncOffRef.current = true;
+    toast.info(
+      "Cross-device sync is off. Add VITE_SYNC_SECRET in Vercel (same value as SYNC_SECRET) and redeploy.",
+      { duration: 8000 }
+    );
+  }, [allowed]);
 
   // Cross-device sync: fetch on load but do NOT apply dayHabits/monthCompletionByDay (so refresh keeps localStorage checkmarks)
   useEffect(() => {
@@ -321,12 +338,14 @@ const Dashboard = () => {
         tasks,
         distractions,
       }).then((result) => {
-        if (!result.ok && "status" in result) {
-          const status = result.status;
+        if (!result.ok) {
+          const status = "status" in result ? result.status : undefined;
           if (status === 401) {
             toast.error("Sync save failed: SYNC_SECRET and VITE_SYNC_SECRET must match in Vercel.");
           } else if (status != null && status >= 500) {
             toast.error("Sync save failed. Check Vercel Blob is connected.");
+          } else {
+            toast.error("Sync save failed. Check Network tab for /api/data.");
           }
         }
       });

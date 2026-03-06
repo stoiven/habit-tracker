@@ -228,10 +228,9 @@ const Dashboard = () => {
   dayHabitsRef.current = dayHabits;
   monthCompletionByDayRef.current = monthCompletionByDay;
 
-  const applySyncPayload = useCallback((data: SyncPayload, isFromVisibilityChange: boolean) => {
+  const applySyncPayload = useCallback((data: SyncPayload, _isFromVisibilityChange: boolean) => {
     if (!data) return;
-    const isFirstLoad = !isFromVisibilityChange && !isInitialSyncDoneRef.current;
-    if (isFirstLoad) isInitialSyncDoneRef.current = true;
+    if (!isInitialSyncDoneRef.current) isInitialSyncDoneRef.current = true;
 
     // Always apply habits, tasks, distractions so cross-device works on first load
     if (Array.isArray(data.habits) && data.habits.length > 0) {
@@ -247,29 +246,29 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // Only apply dayHabits/month when not first load (so refresh on same device keeps localStorage checkmarks)
-    if (!isFirstLoad) {
-      if (data.dayHabits && typeof data.dayHabits === "object") {
-        const local = dayHabitsRef.current;
-        const merged: Record<string, string[]> = {};
-        for (const k of Object.keys(data.dayHabits)) {
-          if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
-        }
-        for (const k of Object.keys(local)) {
-          if (local[k]?.length) merged[k] = local[k];
-        }
-        setDayHabits(merged);
-        setStoredDayHabits(merged);
+    // Always apply dayHabits/month with "local wins when present" so:
+    // - Same-device refresh: we have local from localStorage → keep it
+    // - Cross-device (e.g. ticked on mobile, refresh web): local empty → use cloud
+    if (data.dayHabits && typeof data.dayHabits === "object") {
+      const local = dayHabitsRef.current;
+      const merged: Record<string, string[]> = {};
+      for (const k of Object.keys(data.dayHabits)) {
+        if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
       }
-      if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-        const local = monthCompletionByDayRef.current;
-        const merged = { ...data.monthCompletionByDay };
-        for (const k of Object.keys(local)) {
-          if (local[k]?.length) merged[k] = local[k];
-        }
-        setMonthCompletionByDay(merged);
-        setStoredMonthCompletion(merged);
+      for (const k of Object.keys(local)) {
+        if (local[k]?.length) merged[k] = local[k];
       }
+      setDayHabits(merged);
+      setStoredDayHabits(merged);
+    }
+    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+      const local = monthCompletionByDayRef.current;
+      const merged = { ...data.monthCompletionByDay };
+      for (const k of Object.keys(local)) {
+        if (local[k]?.length) merged[k] = local[k];
+      }
+      setMonthCompletionByDay(merged);
+      setStoredMonthCompletion(merged);
     }
   }, []);
 

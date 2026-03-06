@@ -246,29 +246,18 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // Always apply dayHabits/month with "local wins when present" so:
-    // - Same-device refresh: we have local from localStorage → keep it
-    // - Cross-device (e.g. ticked on mobile, refresh web): local empty → use cloud
+    // Apply dayHabits/month from cloud as source of truth so check and uncheck both sync
     if (data.dayHabits && typeof data.dayHabits === "object") {
-      const local = dayHabitsRef.current;
       const merged: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
         if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
-      }
-      for (const k of Object.keys(local)) {
-        if (local[k]?.length) merged[k] = local[k];
       }
       setDayHabits(merged);
       setStoredDayHabits(merged);
     }
     if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
-      const local = monthCompletionByDayRef.current;
-      const merged = { ...data.monthCompletionByDay };
-      for (const k of Object.keys(local)) {
-        if (local[k]?.length) merged[k] = local[k];
-      }
-      setMonthCompletionByDay(merged);
-      setStoredMonthCompletion(merged);
+      setMonthCompletionByDay({ ...data.monthCompletionByDay });
+      setStoredMonthCompletion(data.monthCompletionByDay);
     }
   }, []);
 

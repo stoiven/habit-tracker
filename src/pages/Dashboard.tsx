@@ -130,11 +130,49 @@ const Dashboard = () => {
     const now = new Date();
     return now.getFullYear() + Math.floor((now.getMonth() + monthOffset) / 12);
   }, [monthOffset]);
-  const yearTotalPossible = 365 * habits.filter((h) => h.isActive).length;
+  const activeHabitCount = habits.filter((h) => h.isActive).length;
+  const yearTotalPossible = 365 * activeHabitCount;
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ];
+
+  // Dashboard (annual) stats from dayHabits so week/month completions are reflected
+  const yearCompleted = useMemo(() => {
+    const prefix = `${currentYear}-`;
+    return Object.entries(dayHabits).reduce((sum, [key, arr]) => {
+      if (key.startsWith(prefix) && Array.isArray(arr)) return sum + arr.length;
+      return sum;
+    }, 0);
+  }, [currentYear, dayHabits]);
+  const yearPercentage = yearTotalPossible ? Math.round((yearCompleted / yearTotalPossible) * 100) : 0;
+
+  const annualTrendsData = useMemo(() => {
+    return monthNames.map((month, i) => {
+      const daysInMonth = new Date(currentYear, i + 1, 0).getDate();
+      let completed = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${currentYear}-${String(i + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        completed += (dayHabits[key] || []).length;
+      }
+      const possible = daysInMonth * activeHabitCount;
+      const value = possible ? Math.round((completed / possible) * 100) : 0;
+      return { month: month.slice(0, 3), value };
+    });
+  }, [currentYear, dayHabits, activeHabitCount]);
+
+  const yearRetrospectiveMonthPcts = useMemo(() => {
+    return monthNames.map((_, i) => {
+      const daysInMonth = new Date(currentYear, i + 1, 0).getDate();
+      let completed = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${currentYear}-${String(i + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        completed += (dayHabits[key] || []).length;
+      }
+      const possible = daysInMonth * activeHabitCount;
+      return possible ? Math.round((completed / possible) * 100) : 0;
+    });
+  }, [currentYear, dayHabits, activeHabitCount]);
 
   const getDateLabel = () => {
     if (activeView === "dashboard") return `${currentYear} DASHBOARD`;
@@ -652,19 +690,19 @@ const Dashboard = () => {
             <main className="lg:col-span-9 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
-                  <AnnualTrends />
+                  <AnnualTrends data={annualTrendsData} />
                 </div>
                 <div>
-                  <AnnualPerformance percentage={0} completed={0} total={yearTotalPossible} />
+                  <AnnualPerformance percentage={yearPercentage} completed={yearCompleted} total={yearTotalPossible} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <YearRetrospective year={currentYear} donePct={0} />
+                <YearRetrospective year={currentYear} donePct={yearPercentage} monthPcts={yearRetrospectiveMonthPcts} />
                 <YourStoryThisYear />
               </div>
 
-              <MonthlyBreakdown year={currentYear} />
+              <MonthlyBreakdown year={currentYear} completionByDay={dayHabits} activeHabitCount={activeHabitCount} />
             </main>
           </div>
         </div>

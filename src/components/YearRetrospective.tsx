@@ -6,10 +6,11 @@ const MONTHS = [
 interface YearRetrospectiveProps {
   year: number;
   donePct?: number;
+  monthPcts?: number[];
 }
 
-const YearRetrospective = ({ year, donePct = 0 }: YearRetrospectiveProps) => {
-  const monthData = MONTHS.map((month, i) => ({ month, pct: 0 }));
+const YearRetrospective = ({ year, donePct = 0, monthPcts }: YearRetrospectiveProps) => {
+  const monthData = MONTHS.map((month, i) => ({ month, pct: monthPcts?.[i] ?? 0 }));
   return (
   <div className="bg-card rounded-sm shadow-card p-5">
     <div className="flex items-center justify-between mb-4">

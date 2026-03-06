@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo } from "react";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -90,33 +90,35 @@ const RetrospectiveMonthGrid = ({
 
 interface MonthlyBreakdownProps {
   year: number;
+  completionByDay?: Record<string, string[]>;
+  activeHabitCount?: number;
 }
 
-const MonthlyBreakdown = ({ year }: MonthlyBreakdownProps) => {
-  const [activeTab, setActiveTab] = useState<"habits" | "mood">("habits");
+const MonthlyBreakdown = ({ year, completionByDay = {}, activeHabitCount = 0 }: MonthlyBreakdownProps) => {
   const monthData: { name: string; index: number; donePct: number; dayPcts?: Record<number, number> }[] =
-    MONTHS.slice(0, 6).map((name, i) => ({ name, index: i, donePct: 0 }));
+    useMemo(() => {
+      return MONTHS.map((name, monthIndex) => {
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+        const dayPcts: Record<number, number> = {};
+        let totalCompleted = 0;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          const n = (completionByDay[key] || []).length;
+          totalCompleted += n;
+          dayPcts[d] = activeHabitCount ? Math.round((n / activeHabitCount) * 100) : 0;
+        }
+        const possible = daysInMonth * activeHabitCount;
+        const donePct = possible ? Math.round((totalCompleted / possible) * 100) : 0;
+        return { name, index: monthIndex, donePct, dayPcts };
+      });
+    }, [year, completionByDay, activeHabitCount]);
+
   return (
     <div className="bg-card rounded-sm shadow-card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
           Monthly Breakdown
         </h3>
-        <div className="flex rounded-sm overflow-hidden border border-border">
-          {(["habits", "mood"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors ${
-                activeTab === tab
-                  ? "bg-success text-primary-foreground"
-                  : "bg-transparent text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
       </div>
       <div className="overflow-x-auto pb-2">
         <div className="flex gap-4 min-w-max">

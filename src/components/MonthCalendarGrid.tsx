@@ -74,10 +74,10 @@ const MonthCalendarGrid = ({
   });
 
   return (
-    <div className={`overflow-x-auto overflow-y-hidden border border-border ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
+    <div className={`overflow-x-auto overflow-y-hidden border border-success ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
       <div className="flex w-full min-w-0" style={{ minWidth: "640px" }}>
         {/* Left: habit list — spacer matches table thead (3 rows) so first habit name aligns with first data row */}
-        <div className="w-16 sm:w-24 lg:w-36 shrink-0 border-r border-border bg-card flex flex-col">
+        <div className="w-16 sm:w-24 lg:w-36 shrink-0 border-r border-success bg-card flex flex-col">
           <div className="p-2 sm:p-3 pb-1 sm:pb-1.5">
             <button type="button" className="text-[10px] sm:text-xs font-semibold text-foreground uppercase tracking-wider w-full text-left truncate">
               + Habits
@@ -88,7 +88,7 @@ const MonthCalendarGrid = ({
             {habits.map((h) => (
               <div
                 key={h.id}
-                className="h-6 sm:h-7 flex items-center px-2 sm:px-3 border-b border-border text-[10px] sm:text-xs text-foreground truncate"
+                className="h-6 sm:h-7 flex items-center px-2 sm:px-3 border-b border-success text-[10px] sm:text-xs text-foreground truncate"
               >
                 {h.name}
               </div>
@@ -106,7 +106,7 @@ const MonthCalendarGrid = ({
                   <th
                     key={weekIndex}
                     colSpan={end - start + 1}
-                    className="text-[8px] sm:text-[10px] font-semibold text-foreground border-b border-r border-border px-0.5 sm:px-1 py-1 sm:py-1.5 text-left"
+                    className="text-[8px] sm:text-[10px] font-semibold text-foreground border-b border-r border-success px-0.5 sm:px-1 py-1 sm:py-1.5 text-left"
                   >
                     <span className="hidden sm:inline">WEEK </span>{weekIndex + 1}
                   </th>
@@ -116,7 +116,7 @@ const MonthCalendarGrid = ({
                 {days.map((d) => (
                   <th
                     key={dateKey(d.date)}
-                    className="text-[8px] sm:text-[10px] font-medium text-muted-foreground border-b border-r border-border first:border-l px-0.5 py-1 sm:py-2 w-6 min-w-6 sm:w-7 sm:min-w-7"
+                    className="text-[8px] sm:text-[10px] font-medium text-muted-foreground border-b border-r border-success first:border-l px-0.5 py-1 sm:py-2 w-6 min-w-6 sm:w-7 sm:min-w-7 text-center"
                   >
                     {DAY_LETTERS[d.dayInWeek]}
                   </th>
@@ -128,7 +128,7 @@ const MonthCalendarGrid = ({
                   return (
                     <th
                       key={dateKey(d.date)}
-                      className={`text-[8px] sm:text-[10px] font-medium border-b border-r border-border first:border-l px-0.5 py-0.5 sm:py-1 w-6 min-w-6 sm:w-7 sm:min-w-7 ${
+                      className={`text-[8px] sm:text-[10px] font-medium border-b border-r border-success first:border-l px-0.5 py-0.5 sm:py-1 w-6 min-w-6 sm:w-7 sm:min-w-7 text-center ${
                         isCurrentDay
                           ? "bg-[hsl(150,60%,28%)] text-white"
                           : "text-foreground"
@@ -149,7 +149,7 @@ const MonthCalendarGrid = ({
                     return (
                       <td
                         key={key}
-                        className="border-b border-r border-border first:border-l p-0.5 w-6 min-w-6 sm:w-7 sm:min-w-7 h-6 sm:h-7 align-middle"
+                        className="border-b border-r border-success first:border-l p-0.5 w-6 min-w-6 sm:w-7 sm:min-w-7 h-6 sm:h-7 align-middle"
                       >
                         <button
                           type="button"
@@ -176,7 +176,7 @@ const MonthCalendarGrid = ({
         </div>
 
         {/* Right: monthly summary */}
-        <div className="w-20 sm:w-28 lg:w-40 shrink-0 border-l border-border p-2 sm:p-3 bg-card">
+        <div className="w-20 sm:w-28 lg:w-40 shrink-0 border-l border-success p-2 sm:p-3 bg-card">
           <h4 className="text-[10px] sm:text-xs font-semibold tracking-wider text-foreground uppercase mb-2 sm:mb-3 truncate">
             Summary
           </h4>

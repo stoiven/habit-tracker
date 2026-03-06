@@ -7,12 +7,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+const DEFAULT_DATA = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ].map((month) => ({ month, value: 0 }));
 
-const AnnualTrends = () => (
+interface AnnualTrendsProps {
+  data?: { month: string; value: number }[];
+}
+
+const AnnualTrends = ({ data = DEFAULT_DATA }: AnnualTrendsProps) => (
   <div className="bg-card rounded-sm shadow-card p-5">
     <h3 className="text-sm font-semibold tracking-wider text-muted-foreground uppercase mb-4">
       Annual Trends
@@ -31,7 +35,7 @@ const AnnualTrends = () => (
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-            domain={[0, 6]}
+            domain={[0, 100]}
           />
           <Line
             type="monotone"

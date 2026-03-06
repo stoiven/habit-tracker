@@ -24,7 +24,7 @@ const Top10ThisMonth = ({ habits }: Top10ThisMonthProps) => {
             </div>
             <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
               <div
-                className="h-full bg-muted rounded-full transition-all"
+                className="h-full bg-success rounded-full transition-all"
                 style={{ width: `${(daysCompleted / maxDays) * 100}%` }}
               />
             </div>

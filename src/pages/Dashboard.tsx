@@ -254,41 +254,22 @@ const Dashboard = () => {
     }
 
     const now = Date.now();
-    const justToggledHere = now - lastLocalCheckChangeRef.current < 8000;
-    const local = dayHabitsRef.current;
-    const localMonth = monthCompletionByDayRef.current;
+    const justToggledHere = now - lastLocalCheckChangeRef.current < 10000;
+    const skipCheckmarks = !isFirstApply && justToggledHere;
 
-    if (data.dayHabits && typeof data.dayHabits === "object") {
+    if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
       lastApplyAtRef.current = Date.now();
-      const cloudByKey: Record<string, string[]> = {};
+      const merged: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
-        if (Array.isArray(data.dayHabits[k])) cloudByKey[normalizeDayHabitKey(k)] = data.dayHabits[k];
-      }
-      const merged: Record<string, string[]> = { ...cloudByKey };
-      if (justToggledHere) {
-        for (const k of Object.keys(local)) {
-          const localArr = local[k] ?? [];
-          const cloudArr = cloudByKey[k] ?? [];
-          if (localArr.length > 0 && cloudArr.length === 0) merged[k] = localArr;
-          else if (localArr.length === 0 && cloudArr.length > 0) merged[k] = [];
-        }
+        if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
       }
       setDayHabits(merged);
       setStoredDayHabits(merged);
     }
-    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+    if (!skipCheckmarks && data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
       lastApplyAtRef.current = Date.now();
-      const cloudMonth = { ...data.monthCompletionByDay };
-      if (justToggledHere) {
-        for (const k of Object.keys(localMonth)) {
-          const localArr = localMonth[k] ?? [];
-          const cloudArr = cloudMonth[k] ?? [];
-          if (localArr.length > 0 && cloudArr.length === 0) cloudMonth[k] = localArr;
-          else if (localArr.length === 0 && cloudArr.length > 0) cloudMonth[k] = [];
-        }
-      }
-      setMonthCompletionByDay(cloudMonth);
-      setStoredMonthCompletion(cloudMonth);
+      setMonthCompletionByDay({ ...data.monthCompletionByDay });
+      setStoredMonthCompletion(data.monthCompletionByDay);
     }
   }, []);
 

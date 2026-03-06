@@ -99,7 +99,7 @@ const MonthCalendarGrid = ({
                   <th
                     key={weekIndex}
                     colSpan={end - start + 1}
-                    className="text-[8px] sm:text-[10px] font-semibold text-foreground border-b border-border px-0.5 sm:px-1 py-1 sm:py-1.5 text-left"
+                    className="text-[8px] sm:text-[10px] font-semibold text-foreground border-b border-r border-border px-0.5 sm:px-1 py-1 sm:py-1.5 text-left"
                   >
                     <span className="hidden sm:inline">WEEK </span>{weekIndex + 1}
                   </th>
@@ -109,7 +109,7 @@ const MonthCalendarGrid = ({
                 {days.map((d) => (
                   <th
                     key={dateKey(d.date)}
-                    className="text-[8px] sm:text-[10px] font-medium text-muted-foreground border-b border-border px-0.5 py-1 sm:py-2 w-6 min-w-6 sm:w-7 sm:min-w-7"
+                    className="text-[8px] sm:text-[10px] font-medium text-muted-foreground border-b border-r border-border first:border-l px-0.5 py-1 sm:py-2 w-6 min-w-6 sm:w-7 sm:min-w-7"
                   >
                     {DAY_LETTERS[d.dayInWeek]}
                   </th>
@@ -121,7 +121,7 @@ const MonthCalendarGrid = ({
                   return (
                     <th
                       key={dateKey(d.date)}
-                      className={`text-[8px] sm:text-[10px] font-medium border-b border-border px-0.5 py-0.5 sm:py-1 w-6 min-w-6 sm:w-7 sm:min-w-7 ${
+                      className={`text-[8px] sm:text-[10px] font-medium border-b border-r border-border first:border-l px-0.5 py-0.5 sm:py-1 w-6 min-w-6 sm:w-7 sm:min-w-7 ${
                         isCurrentDay
                           ? "bg-[hsl(150,60%,28%)] text-white"
                           : "text-foreground"
@@ -142,7 +142,7 @@ const MonthCalendarGrid = ({
                     return (
                       <td
                         key={key}
-                        className="border-b border-border p-0.5 w-6 min-w-6 sm:w-7 sm:min-w-7 h-6 sm:h-7 align-middle"
+                        className="border-b border-r border-border first:border-l p-0.5 w-6 min-w-6 sm:w-7 sm:min-w-7 h-6 sm:h-7 align-middle"
                       >
                         <button
                           type="button"

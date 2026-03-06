@@ -48,8 +48,12 @@ const Dashboard = () => {
   const [habits, setHabits] = useState<Habit[]>(() => getStoredHabits() ?? defaultHabits);
   const [manageHabitsOpen, setManageHabitsOpen] = useState(false);
   const [streakDialogOpen, setStreakDialogOpen] = useState(false);
-  const [currentYear] = useState(2026);
+  const [currentYear] = useState(() => new Date().getFullYear());
   const [monthOffset, setMonthOffset] = useState(0);
+  const handleViewChange = useCallback((view: ViewType) => {
+    setActiveView(view);
+    if (view === "month") setMonthOffset(0);
+  }, []);
 
   // Require sign-in to view dashboard; re-check so we always enforce
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -118,8 +122,14 @@ const Dashboard = () => {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const displayMonth = (0 + monthOffset + 12) % 12;
-  const displayYear = currentYear + Math.floor((0 + monthOffset) / 12);
+  const displayMonth = useMemo(() => {
+    const now = new Date();
+    return (now.getMonth() + monthOffset + 12) % 12;
+  }, [monthOffset]);
+  const displayYear = useMemo(() => {
+    const now = new Date();
+    return now.getFullYear() + Math.floor((now.getMonth() + monthOffset) / 12);
+  }, [monthOffset]);
   const yearTotalPossible = 365 * habits.filter((h) => h.isActive).length;
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -527,7 +537,7 @@ const Dashboard = () => {
           <DashboardHeader
             dateLabel={getDateLabel()}
             activeView="month"
-            onViewChange={setActiveView}
+            onViewChange={handleViewChange}
             onPrev={() => setMonthOffset((m) => m - 1)}
             onNext={() => setMonthOffset((m) => m + 1)}
             signedIn={true}
@@ -603,7 +613,7 @@ const Dashboard = () => {
           <DashboardHeader
             dateLabel={`${currentYear} DASHBOARD`}
             activeView="dashboard"
-            onViewChange={setActiveView}
+            onViewChange={handleViewChange}
             onPrev={() => {}}
             onNext={() => {}}
             signedIn={true}
@@ -665,7 +675,7 @@ const Dashboard = () => {
             <DashboardHeader
               dateLabel={getDateLabel()}
               activeView={activeView}
-              onViewChange={setActiveView}
+              onViewChange={handleViewChange}
               onPrev={() => setWeekOffset(prev => prev - 1)}
               onNext={() => setWeekOffset(prev => prev + 1)}
               onJumpToThisWeek={() => setWeekOffset(0)}

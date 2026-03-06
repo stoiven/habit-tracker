@@ -76,13 +76,14 @@ const MonthCalendarGrid = ({
   return (
     <div className={`overflow-x-auto overflow-y-hidden border border-border ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
       <div className="flex w-full min-w-0" style={{ minWidth: "640px" }}>
-        {/* Left: habit list — row heights match table body (h-6 sm:h-7) so names align with grid rows */}
+        {/* Left: habit list — spacer matches table thead (3 rows) so first habit name aligns with first data row */}
         <div className="w-16 sm:w-24 lg:w-36 shrink-0 border-r border-border bg-card flex flex-col">
           <div className="p-2 sm:p-3 pb-1 sm:pb-1.5">
             <button type="button" className="text-[10px] sm:text-xs font-semibold text-foreground uppercase tracking-wider w-full text-left truncate">
               + Habits
             </button>
           </div>
+          <div className="shrink-0 h-[4.5rem] sm:h-[5.25rem]" aria-hidden />
           <div className="flex-1 flex flex-col">
             {habits.map((h) => (
               <div

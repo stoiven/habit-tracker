@@ -39,23 +39,23 @@ const DayCard = ({ dayName, date, habits, completedHabits, onToggleHabit, fillWi
         <ProgressCircle percentage={progress} size={80} isToday={today} />
       </div>
 
-      {/* Habits List */}
-      <div className="px-3 pb-3 sm:px-4 sm:pb-4 flex-1 min-w-0">
+      {/* Habits List — centered under the date above */}
+      <div className="px-3 pb-3 sm:px-4 sm:pb-4 flex-1 min-w-0 text-center">
         <h4 className="text-[10px] sm:text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2 sm:mb-3">
           Daily Habits
         </h4>
-        <div className="space-y-1.5 sm:space-y-2">
+        <div className="space-y-1.5 sm:space-y-2 flex flex-col items-center">
           {activeHabits.map((habit) => {
             const isCompleted = completedHabits.includes(habit.id);
             return (
-              <div key={habit.id} className="flex items-center gap-2 min-w-0">
-                <span className={`text-xs sm:text-sm flex-1 min-w-0 truncate ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>
+              <div key={habit.id} className="flex items-center gap-2 w-full max-w-[160px]">
+                <span className={`text-xs sm:text-sm flex-1 min-w-0 truncate text-left ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>
                   {habit.name}
                 </span>
                 <Checkbox
                   checked={isCompleted}
                   onCheckedChange={() => onToggleHabit(habit.id)}
-                  className="border-muted-foreground data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  className="border-muted-foreground data-[state=checked]:bg-primary data-[state=checked]:border-primary shrink-0"
                 />
               </div>
             );

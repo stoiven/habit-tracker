@@ -188,6 +188,10 @@ const Dashboard = () => {
     if (!currentHasData && storedHasData) return;
     setStoredDayHabits(dayHabits);
   }, [dayHabits]);
+  // Keep monthCompletionByDay in sync with dayHabits so sync/storage payload stays compatible
+  useEffect(() => {
+    setMonthCompletionByDay((prev) => ({ ...prev, ...dayHabits }));
+  }, [dayHabits]);
   useEffect(() => {
     const stored = getStoredMonthCompletion();
     const storedHasData = stored && Object.values(stored).some((arr) => arr.length > 0);
@@ -437,21 +441,26 @@ const Dashboard = () => {
     return Array.from({ length: daysInMonth }, (_, i) => {
       const d = i + 1;
       const key = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const completed = (monthCompletionByDay[key] || []).length;
+      const completed = (dayHabits[key] || []).length;
       const total = habits.filter((h) => h.isActive).length;
       const value = total ? Math.round((completed / total) * 100) : 0;
       return { day: d, value };
     });
-  }, [displayYear, displayMonth, monthCompletionByDay, habits]);
+  }, [displayYear, displayMonth, dayHabits, habits]);
 
   const monthTotalPossible = useMemo(() => {
     const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
     return daysInMonth * habits.filter((h) => h.isActive).length;
   }, [displayYear, displayMonth, habits]);
-  const monthCompleted = useMemo(
-    () => Object.values(monthCompletionByDay).reduce((s, arr) => s + arr.length, 0),
-    [monthCompletionByDay]
-  );
+  const monthCompleted = useMemo(() => {
+    const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
+    let total = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      total += (dayHabits[key] || []).length;
+    }
+    return total;
+  }, [displayYear, displayMonth, dayHabits]);
   const monthRate = monthTotalPossible ? Math.round((monthCompleted / monthTotalPossible) * 100) : 0;
 
   const weeklyOverviewData = useMemo(() => {
@@ -467,14 +476,14 @@ const Dashboard = () => {
       const dailyValues: number[] = [];
       for (let i = 0; i < 7 && d <= last.getDate(); i++, d++) {
         const key = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        const n = (monthCompletionByDay[key] || []).length;
+        const n = (dayHabits[key] || []).length;
         dailyValues.push(totalPerDay ? Math.round((n / totalPerDay) * 100) : 0);
       }
       end = d - 1;
       const weekDays = end - start + 1;
       const completed = Array.from({ length: weekDays }, (_, i) => {
         const key = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(start + i).padStart(2, "0")}`;
-        return (monthCompletionByDay[key] || []).length;
+        return (dayHabits[key] || []).length;
       }).reduce((a, b) => a + b, 0);
       const total = weekDays * totalPerDay;
       weeks.push({
@@ -488,15 +497,17 @@ const Dashboard = () => {
       w++;
     }
     return weeks;
-  }, [displayYear, displayMonth, monthCompletionByDay, habits]);
+  }, [displayYear, displayMonth, dayHabits, habits]);
 
   const toggleMonthHabit = (date: Date, habitId: string) => {
     lastLocalCheckChangeRef.current = Date.now();
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    setMonthCompletionByDay((prev) => {
+    setDayHabits((prev) => {
       const cur = prev[key] || [];
       const next = cur.includes(habitId) ? cur.filter((id) => id !== habitId) : [...cur, habitId];
-      return { ...prev, [key]: next };
+      const updated = { ...prev, [key]: next };
+      setStoredDayHabits(updated);
+      return updated;
     });
   };
 
@@ -507,13 +518,13 @@ const Dashboard = () => {
         let daysCompleted = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           const key = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          if ((monthCompletionByDay[key] || []).includes(habit.id)) daysCompleted++;
+          if ((dayHabits[key] || []).includes(habit.id)) daysCompleted++;
         }
         return { habit, daysCompleted };
       })
       .filter((x) => x.daysCompleted > 0)
       .sort((a, b) => b.daysCompleted - a.daysCompleted);
-  }, [habits, displayYear, displayMonth, monthCompletionByDay]);
+  }, [habits, displayYear, displayMonth, dayHabits]);
 
   if (!allowed) return null;
 
@@ -590,7 +601,7 @@ const Dashboard = () => {
               month={displayMonth}
               monthName={monthNames[displayMonth]}
               habits={habits}
-              completionByDay={monthCompletionByDay}
+              completionByDay={dayHabits}
               onToggle={toggleMonthHabit}
             />
           </div>

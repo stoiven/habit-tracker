@@ -34,12 +34,12 @@ const AnnualPerformance = ({ percentage, completed, total }: AnnualPerformancePr
               cy={60}
               style={{
                 strokeDasharray: 52 * 2 * Math.PI,
-                strokeDashoffset: 52 * 2 * Math.PI - (percentage / 100) * 52 * 2 * Math.PI,
+                strokeDashoffset: 52 * 2 * Math.PI - (Math.min(100, percentage) / 100) * 52 * 2 * Math.PI,
               }}
             />
           </svg>
           <span className="absolute text-2xl font-bold text-primary-foreground">
-            {percentage}%
+            {percentage < 1 && percentage > 0 ? percentage.toFixed(1) : Math.round(percentage)}%
           </span>
         </div>
       </div>

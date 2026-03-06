@@ -22,6 +22,15 @@ const MonthlySuccessCard = ({
         Month Mastery {completed}/{total}
       </p>
       <ProgressCircle percentage={percentage} size={100} isToday={false} />
+      <div className="w-full mt-3">
+        <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-success rounded-full transition-all"
+            style={{ width: `${Math.min(100, percentage)}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground text-center mt-1">{percentage}% completed</p>
+      </div>
     </div>
     <div className="pt-4 border-t border-border flex-1">
       <h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2">

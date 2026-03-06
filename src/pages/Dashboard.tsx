@@ -145,7 +145,7 @@ const Dashboard = () => {
       return sum;
     }, 0);
   }, [currentYear, dayHabits]);
-  const yearPercentage = yearTotalPossible ? Math.round((yearCompleted / yearTotalPossible) * 100) : 0;
+  const yearPercentage = yearTotalPossible ? (yearCompleted / yearTotalPossible) * 100 : 0;
 
   const annualTrendsData = useMemo(() => {
     return monthNames.map((month, i) => {
@@ -698,7 +698,7 @@ const Dashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <YearRetrospective year={currentYear} donePct={yearPercentage} monthPcts={yearRetrospectiveMonthPcts} />
+                <YearRetrospective year={currentYear} donePct={Math.round(yearPercentage)} monthPcts={yearRetrospectiveMonthPcts} />
                 <YourStoryThisYear />
               </div>
 

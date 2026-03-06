@@ -75,9 +75,9 @@ const MonthCalendarGrid = ({
 
   return (
     <div className={`overflow-x-auto overflow-y-hidden border border-border ${lightTheme ? "bg-card rounded-xl shadow-card" : "bg-card rounded-sm shadow-card"}`}>
-      <div className="flex w-full min-w-0" style={{ minWidth: "640px" }}>
+      <div className="flex w-full min-w-0 items-start" style={{ minWidth: "640px" }}>
         {/* Single table: first column = habit names so they align with checkbox rows */}
-        <div className="flex-1 min-w-[200px] overflow-x-auto bg-card">
+        <div className="flex-1 min-w-[200px] overflow-x-auto bg-card shrink-0">
           <table className="w-full border-collapse" style={{ tableLayout: "fixed", minWidth: "max-content" }}>
             <thead>
               <tr>

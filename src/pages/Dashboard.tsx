@@ -339,14 +339,18 @@ const Dashboard = () => {
     runSyncFetch(false);
   }, [runSyncFetch]);
 
-  // Refetch when tab becomes visible; then apply day data (merge so local wins)
+  // Refetch when tab becomes visible or window gains focus (e.g. tap back into app on mobile) so you see updates without refresh
   useEffect(() => {
     if (!allowed || !isSyncConfigured()) return;
-    const onVisibilityChange = () => {
+    const fetchIfVisible = () => {
       if (document.visibilityState === "visible") runSyncFetch(true);
     };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("visibilitychange", fetchIfVisible);
+    window.addEventListener("focus", fetchIfVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", fetchIfVisible);
+      window.removeEventListener("focus", fetchIfVisible);
+    };
   }, [allowed, runSyncFetch]);
 
   // Cross-device sync: push to API when data changes (debounced ~0.8s so cloud updates quickly)
@@ -383,8 +387,8 @@ const Dashboard = () => {
     return () => clearTimeout(t);
   }, [allowed, habits, dayHabits, monthCompletionByDay, tasks, distractions]);
 
-  // Poll for cloud updates every 15s when tab is visible so the other device sees changes without refreshing
-  const SYNC_POLL_INTERVAL_MS = 15_000;
+  // Poll for cloud updates every 10s when tab is visible so the other device sees changes without refreshing
+  const SYNC_POLL_INTERVAL_MS = 10_000;
   useEffect(() => {
     if (!allowed || !isSyncConfigured()) return;
     const id = setInterval(() => {

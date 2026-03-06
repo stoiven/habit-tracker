@@ -233,7 +233,8 @@ const Dashboard = () => {
 
   const applySyncPayload = useCallback((data: SyncPayload, _isFromVisibilityChange: boolean) => {
     if (!data) return;
-    isInitialSyncDoneRef.current = true;
+    const isFirstApply = !isInitialSyncDoneRef.current;
+    if (isFirstApply) isInitialSyncDoneRef.current = true;
 
     // Always apply habits, tasks, distractions so cross-device works on first load
     if (Array.isArray(data.habits) && data.habits.length > 0) {
@@ -249,11 +250,11 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // Don't overwrite dayHabits/month if we just toggled or just pushed (stale cloud from other device would re-check)
+    // On first apply (e.g. mobile after refresh) always apply checkmarks so web updates show. Otherwise don't overwrite if we just toggled or pushed.
     const now = Date.now();
     const justToggled = now - lastLocalCheckChangeRef.current < 8000;
     const justPushed = now - lastPushAtRef.current < 12000;
-    const skipCheckmarks = justToggled || justPushed;
+    const skipCheckmarks = !isFirstApply && (justToggled || justPushed);
 
     if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
       const merged: Record<string, string[]> = {};
@@ -362,8 +363,8 @@ const Dashboard = () => {
     };
   }, [allowed, runSyncFetch]);
 
-  // Cross-device sync: push to API when data changes (debounced ~0.8s so cloud updates quickly)
-  const PUSH_DEBOUNCE_MS = 800;
+  // Cross-device sync: push to API when data changes (debounced so cloud updates quickly after toggle)
+  const PUSH_DEBOUNCE_MS = 400;
   useEffect(() => {
     if (!allowed) return;
     const user = getUser();
@@ -379,7 +380,6 @@ const Dashboard = () => {
       }).then((result) => {
         if (result.ok) {
           lastPushAtRef.current = Date.now();
-          toast.success("Saved to cloud", { duration: 2000 });
         } else {
           const status = "status" in result ? result.status : undefined;
           if (status === 401) {

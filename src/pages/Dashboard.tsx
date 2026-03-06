@@ -253,24 +253,42 @@ const Dashboard = () => {
       setStoredDistractions(data.distractions as Distraction[]);
     }
 
-    // Only skip applying checkmarks if WE just toggled here (so we don't overwrite our own action with stale cloud). The other device should always apply so it sees our check/uncheck without refresh.
     const now = Date.now();
-    const justToggledHere = now - lastLocalCheckChangeRef.current < 6000;
-    const skipCheckmarks = !isFirstApply && justToggledHere;
+    const justToggledHere = now - lastLocalCheckChangeRef.current < 8000;
+    const local = dayHabitsRef.current;
+    const localMonth = monthCompletionByDayRef.current;
 
-    if (!skipCheckmarks && data.dayHabits && typeof data.dayHabits === "object") {
+    if (data.dayHabits && typeof data.dayHabits === "object") {
       lastApplyAtRef.current = Date.now();
-      const merged: Record<string, string[]> = {};
+      const cloudByKey: Record<string, string[]> = {};
       for (const k of Object.keys(data.dayHabits)) {
-        if (Array.isArray(data.dayHabits[k])) merged[normalizeDayHabitKey(k)] = data.dayHabits[k];
+        if (Array.isArray(data.dayHabits[k])) cloudByKey[normalizeDayHabitKey(k)] = data.dayHabits[k];
+      }
+      const merged: Record<string, string[]> = { ...cloudByKey };
+      if (justToggledHere) {
+        for (const k of Object.keys(local)) {
+          const localArr = local[k] ?? [];
+          const cloudArr = cloudByKey[k] ?? [];
+          if (localArr.length > 0 && cloudArr.length === 0) merged[k] = localArr;
+          else if (localArr.length === 0 && cloudArr.length > 0) merged[k] = [];
+        }
       }
       setDayHabits(merged);
       setStoredDayHabits(merged);
     }
-    if (!skipCheckmarks && data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
+    if (data.monthCompletionByDay && typeof data.monthCompletionByDay === "object") {
       lastApplyAtRef.current = Date.now();
-      setMonthCompletionByDay({ ...data.monthCompletionByDay });
-      setStoredMonthCompletion(data.monthCompletionByDay);
+      const cloudMonth = { ...data.monthCompletionByDay };
+      if (justToggledHere) {
+        for (const k of Object.keys(localMonth)) {
+          const localArr = localMonth[k] ?? [];
+          const cloudArr = cloudMonth[k] ?? [];
+          if (localArr.length > 0 && cloudArr.length === 0) cloudMonth[k] = localArr;
+          else if (localArr.length === 0 && cloudArr.length > 0) cloudMonth[k] = [];
+        }
+      }
+      setMonthCompletionByDay(cloudMonth);
+      setStoredMonthCompletion(cloudMonth);
     }
   }, []);
 
